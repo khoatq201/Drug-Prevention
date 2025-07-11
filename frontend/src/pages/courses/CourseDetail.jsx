@@ -130,17 +130,17 @@ const CourseDetail = () => {
   const isLessonAccessible = (lesson, index) => {
     if (!enrollment) return false;
     if (index === 0) return true; // First lesson is always accessible
-    
+
     // Check if previous lessons are completed
     const completedLessons = enrollment.progress?.completedLessons || [];
-    const previousLessonId = course.lessons[index - 1]._id;
+    const previousLessonId = course.modules?.lessons[index - 1]._id;
     return completedLessons.includes(previousLessonId);
   };
 
   const getProgress = () => {
-    if (!enrollment || !course?.lessons?.length) return 0;
+    if (!enrollment || !course?.modules?.lessons?.length) return 0;
     const completedLessons = enrollment.progress?.completedLessons || [];
-    return Math.round((completedLessons.length / course.lessons.length) * 100);
+    return Math.round((completedLessons.length / course.modules?.lessons.length) * 100);
   };
 
   if (loading) {
@@ -169,7 +169,7 @@ const CourseDetail = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gray-50 py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -190,7 +190,7 @@ const CourseDetail = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Course Header */}
-            <motion.div 
+            <motion.div
               className="bg-white rounded-lg shadow-md overflow-hidden mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -204,7 +204,7 @@ const CourseDetail = () => {
                   />
                 </div>
               )}
-              
+
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelStyle(course.level)}`}>
@@ -221,7 +221,7 @@ const CourseDetail = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
                   {course.title}
                 </h1>
-                
+
                 <p className="text-gray-600 text-lg mb-6">
                   {course.description}
                 </p>
@@ -233,7 +233,11 @@ const CourseDetail = () => {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <BookOpenIcon className="w-5 h-5 mr-2" />
-                    <span>{course.lessons?.length || 0} bài học</span>
+                    <span>
+                      {course.modules
+                        ? course.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0)
+                        : 0} bài học
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <UserGroupIcon className="w-5 h-5 mr-2" />
@@ -252,7 +256,7 @@ const CourseDetail = () => {
                       <span>{getProgress()}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <motion.div 
+                      <motion.div
                         className="bg-green-600 h-2 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${getProgress()}%` }}
@@ -265,7 +269,7 @@ const CourseDetail = () => {
             </motion.div>
 
             {/* Tabs */}
-            <motion.div 
+            <motion.div
               className="bg-white rounded-lg shadow-md"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -283,11 +287,10 @@ const CourseDetail = () => {
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-4 border-b-2 font-medium text-sm transition-colors ${
-                          activeTab === tab.id
-                            ? "border-green-500 text-green-600"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
-                        }`}
+                        className={`py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                          ? "border-green-500 text-green-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700"
+                          }`}
                       >
                         <Icon className="w-4 h-4 mr-2 inline" />
                         {tab.label}
@@ -308,7 +311,7 @@ const CourseDetail = () => {
                         {course.fullDescription || course.description}
                       </div>
                     </div>
-                    
+
                     {course.objectives && (
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -348,61 +351,65 @@ const CourseDetail = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Nội dung khóa học
                     </h3>
-                    <div className="space-y-3">
-                      {course.lessons?.map((lesson, index) => {
-                        const isAccessible = isLessonAccessible(lesson, index);
-                        const isCompleted = enrollment?.progress?.completedLessons?.includes(lesson._id);
-                        
-                        return (
-                          <motion.div
-                            key={lesson._id}
-                            className={`border rounded-lg p-4 transition-colors ${
-                              isAccessible ? "border-gray-200 hover:border-green-300" : "border-gray-100 bg-gray-50"
-                            }`}
-                            whileHover={isAccessible ? { scale: 1.01 } : {}}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center flex-1">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                  isCompleted ? "bg-green-500" : isAccessible ? "bg-blue-500" : "bg-gray-300"
-                                }`}>
-                                  {isCompleted ? (
-                                    <CheckCircleIcon className="w-5 h-5 text-white" />
-                                  ) : isAccessible ? (
-                                    <PlayIcon className="w-4 h-4 text-white" />
-                                  ) : (
-                                    <LockClosedIcon className="w-4 h-4 text-gray-500" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className={`font-medium ${
-                                    isAccessible ? "text-gray-900" : "text-gray-500"
-                                  }`}>
-                                    {lesson.title}
-                                  </h4>
-                                  <p className={`text-sm ${
-                                    isAccessible ? "text-gray-600" : "text-gray-400"
-                                  }`}>
-                                    {lesson.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-500 mr-4">
-                                <ClockIcon className="w-4 h-4 mr-1" />
-                                <span>{formatDuration(lesson.duration)}</span>
-                              </div>
-                              {isAccessible && (
-                                <button
-                                  onClick={() => handleStartLessson(lesson._id)}
-                                  className="btn-outline text-sm"
+                    <div className="space-y-6">
+                      {course.modules?.map((module, moduleIdx) => (
+                        <div key={module._id || moduleIdx}>
+                          <h4 className="font-semibold text-gray-800 mb-2">{module.title}</h4>
+                          <div className="space-y-3">
+                            {module.lessons?.map((lesson, lessonIdx) => {
+                              const index = lessonIdx; // You may want to use a global index if needed
+                              const isAccessible = isLessonAccessible(lesson, index);
+                              const isCompleted = enrollment?.progress?.completedLessons?.includes(lesson._id);
+
+                              return (
+                                <motion.div
+                                  key={lesson._id}
+                                  className={`border rounded-lg p-4 transition-colors ${isAccessible ? "border-gray-200 hover:border-green-300" : "border-gray-100 bg-gray-50"
+                                    }`}
+                                  whileHover={isAccessible ? { scale: 1.01 } : {}}
                                 >
-                                  {isCompleted ? "Xem lại" : "Bắt đầu"}
-                                </button>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center flex-1">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${isCompleted ? "bg-green-500" : isAccessible ? "bg-blue-500" : "bg-gray-300"
+                                        }`}>
+                                        {isCompleted ? (
+                                          <CheckCircleIcon className="w-5 h-5 text-white" />
+                                        ) : isAccessible ? (
+                                          <PlayIcon className="w-4 h-4 text-white" />
+                                        ) : (
+                                          <LockClosedIcon className="w-4 h-4 text-gray-500" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <h4 className={`font-medium ${isAccessible ? "text-gray-900" : "text-gray-500"
+                                          }`}>
+                                          {lesson.title}
+                                        </h4>
+                                        <p className={`text-sm ${isAccessible ? "text-gray-600" : "text-gray-400"
+                                          }`}>
+                                          {lesson.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500 mr-4">
+                                      <ClockIcon className="w-4 h-4 mr-1" />
+                                      <span>{formatDuration(lesson.duration)}</span>
+                                    </div>
+                                    {isAccessible && (
+                                      <button
+                                        onClick={() => handleStartLessson(lesson._id)}
+                                        className="btn-outline text-sm"
+                                      >
+                                        {isCompleted ? "Xem lại" : "Bắt đầu"}
+                                      </button>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -422,7 +429,7 @@ const CourseDetail = () => {
           </div>
 
           {/* Sidebar */}
-          <motion.div 
+          <motion.div
             className="space-y-6"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -446,11 +453,11 @@ const CourseDetail = () => {
                   <div className="text-center text-green-600 font-medium">
                     ✓ Đã đăng ký
                   </div>
-                  
-                  {course.lessons?.length > 0 && (
+
+                  {course.modules?.lessons?.length > 0 && (
                     <button
                       onClick={() => {
-                        const firstAccessibleLesson = course.lessons.find((lesson, index) => 
+                        const firstAccessibleLesson = course.modules?.lessons.find((lesson, index) =>
                           isLessonAccessible(lesson, index)
                         );
                         if (firstAccessibleLesson) {
@@ -498,7 +505,7 @@ const CourseDetail = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số bài học:</span>
-                  <span className="font-medium">{course.lessons?.length || 0}</span>
+                  <span className="font-medium">{course.modules?.lessons?.length || 0}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Cấp độ:</span>

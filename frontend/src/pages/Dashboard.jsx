@@ -103,7 +103,8 @@ const Dashboard = () => {
 
   const fetchEnrolledCourses = async () => {
     try {
-      const response = await api.get("/courses/my-courses?limit=3");
+      debugger
+      const response = await api.get(`/courses/user/${user?._id}/enrolled`);
       if (response.data.success) {
         setEnrolledCourses(response.data.data || []);
       }
