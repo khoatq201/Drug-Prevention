@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import toast from "react-hot-toast";
 import {
   AcademicCapIcon,
   ClipboardDocumentCheckIcon,
@@ -11,6 +13,41 @@ import {
 } from "@heroicons/react/24/outline";
 
 const Home = () => {
+  const { isAuthenticated, user } = useAuth();
+
+  // Debug auth state
+  console.log(
+    "🏠 Home component render - isAuthenticated:",
+    isAuthenticated,
+    "user:",
+    user
+  );
+
+  // Show welcome toast when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Check if we just came from login (to avoid showing toast on every page reload)
+      const justLoggedIn = sessionStorage.getItem("justLoggedIn");
+      if (justLoggedIn) {
+        toast.success(`Chào mừng trở lại, ${user.firstName}! 🎉`, {
+          duration: 4000,
+          position: "top-center",
+          style: {
+            background: "#10B981",
+            color: "white",
+            padding: "16px 24px",
+            borderRadius: "8px",
+            fontSize: "16px",
+            fontWeight: "500",
+          },
+          icon: "👋",
+        });
+        // Remove the flag after showing toast
+        sessionStorage.removeItem("justLoggedIn");
+      }
+    }
+  }, [isAuthenticated, user]);
+
   // Animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
@@ -431,22 +468,47 @@ const Home = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center"
             variants={staggerContainer}
           >
-            <motion.div variants={fadeInUp}>
-              <Link
-                to="/register"
-                className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-200 inline-block"
-              >
-                Đăng ký ngay
-              </Link>
-            </motion.div>
-            <motion.div variants={fadeInUp}>
-              <Link
-                to="/contact"
-                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition duration-200 inline-block"
-              >
-                Liên hệ với chúng tôi
-              </Link>
-            </motion.div>
+            {isAuthenticated ? (
+              // Show for logged in users
+              <>
+                <motion.div variants={fadeInUp}>
+                  <Link
+                    to="/dashboard"
+                    className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-200 inline-block"
+                  >
+                    Đi tới Dashboard
+                  </Link>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                  <Link
+                    to="/courses"
+                    className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition duration-200 inline-block"
+                  >
+                    Khám phá khóa học
+                  </Link>
+                </motion.div>
+              </>
+            ) : (
+              // Show for guest users
+              <>
+                <motion.div variants={fadeInUp}>
+                  <Link
+                    to="/register"
+                    className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-200 inline-block"
+                  >
+                    Đăng ký ngay
+                  </Link>
+                </motion.div>
+                <motion.div variants={fadeInUp}>
+                  <Link
+                    to="/contact"
+                    className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition duration-200 inline-block"
+                  >
+                    Liên hệ với chúng tôi
+                  </Link>
+                </motion.div>
+              </>
+            )}
           </motion.div>
         </div>
       </motion.section>

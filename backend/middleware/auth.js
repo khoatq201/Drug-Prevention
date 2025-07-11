@@ -4,9 +4,14 @@ const User = require("../models/User");
 // Middleware xác thực token
 const auth = async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const authHeader = req.header("Authorization");
+    console.log("🔍 Auth header:", authHeader);
+
+    const token = authHeader?.replace("Bearer ", "");
+    console.log("🔍 Extracted token:", token ? "exists" : "missing");
 
     if (!token) {
+      console.log("❌ No token provided");
       return res.status(401).json({
         success: false,
         message: "Token truy cập không được cung cấp",
@@ -14,9 +19,13 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("✅ Token decoded:", decoded);
+
     const user = await User.findById(decoded.userId).select("-password");
+    console.log("🔍 User found:", user ? user.email : "not found");
 
     if (!user) {
+      console.log("❌ User not found for token");
       return res.status(401).json({
         success: false,
         message: "Token không hợp lệ",
@@ -24,6 +33,7 @@ const auth = async (req, res, next) => {
     }
 
     if (!user.isActive) {
+      console.log("❌ User inactive");
       return res.status(401).json({
         success: false,
         message: "Tài khoản đã bị vô hiệu hóa",
@@ -31,6 +41,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+    console.log("✅ Auth successful for:", user.email);
     next();
   } catch (error) {
     console.error("Auth middleware error:", error);
@@ -67,8 +78,8 @@ const authorize = (...roles) => {
     }
 
     // Check if user has any of the required roles using hierarchy
-    const hasPermission = roles.some(role => req.user.hasPermission(role));
-    
+    const hasPermission = roles.some((role) => req.user.hasPermission(role));
+
     if (!hasPermission) {
       return res.status(403).json({
         success: false,

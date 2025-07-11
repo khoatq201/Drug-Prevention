@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import GoogleLoginButton from "../../components/Google/GoogleLoginButton";
 import api from "../../utils/api";
 
-const Register = () => {
+const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -20,20 +19,16 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await api.post("/auth/send-registration-otp", {
+      const response = await api.post("/auth/forgot-password", {
         email: data.email,
-        firstName: data.firstName,
       });
 
       if (response.data.success) {
         toast.success("Mã xác thực đã được gửi đến email của bạn");
-        // Navigate to OTP verification with all form data
         navigate("/otp-verification", {
           state: {
             email: data.email,
-            firstName: data.firstName,
-            type: "registration",
-            formData: data,
+            type: "password_reset",
           },
         });
       }
@@ -45,17 +40,14 @@ const Register = () => {
     }
   };
 
-  const ageGroups = [
-    { value: "student", label: "Học sinh (6-18 tuổi)" },
-    { value: "university_student", label: "Sinh viên (18-25 tuổi)" },
-    { value: "parent", label: "Phụ huynh" },
-    { value: "teacher", label: "Giáo viên" },
-    { value: "other", label: "Khác" },
-  ];
-
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  };
+
+  const slideInLeft = {
+    hidden: { opacity: 0, x: -60 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.8 } },
   };
 
   return (
@@ -66,68 +58,45 @@ const Register = () => {
         animate="visible"
         variants={fadeInUp}
       >
-        <div className="text-center">
-          <motion.div
-            className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
-            <svg
-              className="w-10 h-10 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-              />
-            </svg>
-          </motion.div>
-
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Tạo tài khoản mới
-          </h2>
-
-          <p className="text-gray-600">Bước 1: Xác thực email</p>
-        </div>
-
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* First Name */}
-            <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                {...register("firstName", {
-                  required: "Tên không được để trống",
-                  maxLength: {
-                    value: 50,
-                    message: "Tên không được vượt quá 50 ký tự",
-                  },
-                })}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200 ${
-                  errors.firstName
-                    ? "border-red-300 bg-red-50"
-                    : "border-gray-300"
-                }`}
-                placeholder="Nhập tên của bạn"
-              />
-              {errors.firstName && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.firstName.message}
-                </p>
-              )}
+          <div className="text-center mb-8">
+            <motion.div
+              className="mx-auto w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6"
+              variants={slideInLeft}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              <svg
+                className="w-10 h-10 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                />
+              </svg>
             </motion.div>
 
-            {/* Email */}
+            <motion.h2
+              className="text-3xl font-bold text-gray-900 mb-2"
+              variants={slideInLeft}
+            >
+              Quên mật khẩu?
+            </motion.h2>
+
+            <motion.p className="text-gray-600" variants={fadeInUp}>
+              Nhập email của bạn để nhận mã xác thực đặt lại mật khẩu
+            </motion.p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <motion.div variants={fadeInUp}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email <span className="text-red-500">*</span>
+                Email
               </label>
               <input
                 type="email"
@@ -159,7 +128,7 @@ const Register = () => {
                 ${
                   loading
                     ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-green-600 hover:bg-green-700 hover:scale-105"
+                    : "bg-orange-600 hover:bg-orange-700 hover:scale-105"
                 }
               `}
               variants={fadeInUp}
@@ -177,25 +146,9 @@ const Register = () => {
             </motion.button>
           </form>
 
-          {/* Google Login */}
-          <motion.div className="mt-6" variants={fadeInUp}>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Hoặc</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <GoogleLoginButton />
-            </div>
-          </motion.div>
-
           <motion.div className="mt-6 text-center" variants={fadeInUp}>
             <p className="text-gray-600 text-sm">
-              Đã có tài khoản?{" "}
+              Nhớ mật khẩu?{" "}
               <Link
                 to="/login"
                 className="text-green-600 hover:text-green-700 font-semibold underline"
@@ -204,10 +157,55 @@ const Register = () => {
               </Link>
             </p>
           </motion.div>
+
+          <motion.div className="mt-4 text-center" variants={fadeInUp}>
+            <p className="text-gray-600 text-sm">
+              Chưa có tài khoản?{" "}
+              <Link
+                to="/register"
+                className="text-blue-600 hover:text-blue-700 font-semibold underline"
+              >
+                Đăng ký ngay
+              </Link>
+            </p>
+          </motion.div>
         </div>
+
+        {/* Information Card */}
+        <motion.div
+          className="bg-white rounded-xl p-6 shadow-lg"
+          variants={fadeInUp}
+        >
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <svg
+                className="w-6 h-6 text-blue-500 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-1">
+                Lưu ý bảo mật
+              </h3>
+              <p className="text-xs text-gray-600">
+                Mã xác thực sẽ có hiệu lực trong 10 phút. Vui lòng kiểm tra cả
+                hộp thư spam nếu không thấy email.
+              </p>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );
 };
 
-export default Register;
+export default ForgotPassword;
