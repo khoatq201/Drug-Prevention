@@ -214,8 +214,10 @@ const counselorSchema = new mongoose.Schema(
       },
       sessionTypes: [
         {
-          type: String,
-          enum: ["individual", "group", "family", "couple"],
+          type: {
+            type: String,
+            enum: ["individual", "group", "family", "couple"],
+          },
           duration: Number,
           price: Number,
           isActive: {
@@ -538,6 +540,10 @@ counselorSchema.statics.searchCounselor = function (criteria) {
   
   if (criteria.minRating) {
     query["performance.averageRating"] = { $gte: criteria.minRating };
+  }
+  
+  if (criteria.userId) {
+    query.userId = criteria.userId;
   }
   
   return this.find(query)

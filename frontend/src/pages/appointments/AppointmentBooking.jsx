@@ -22,6 +22,8 @@ const AppointmentBooking = () => {
   const [selectedTime, setSelectedTime] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
   const [notes, setNotes] = useState("");
+  const [appointmentType, setAppointmentType] = useState("online");
+  const [urgency, setUrgency] = useState("medium");
   const [loading, setLoading] = useState(false);
   const [bookingStep, setBookingStep] = useState(1); // 1: Select counselor, 2: Select date/time, 3: Confirm
 
@@ -36,7 +38,7 @@ const AppointmentBooking = () => {
   const fetchCounselors = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/counselors");
+      const response = await api.get("/counselors/search");
       setCounselors(response.data.data || []);
     } catch (error) {
       console.error("Error fetching counselors:", error);
@@ -48,8 +50,8 @@ const AppointmentBooking = () => {
 
   const fetchAvailableSlots = async (counselorId, date) => {
     try {
-      const response = await api.get(`/counselors/${counselorId}/availability?date=${date}`);
-      setAvailableSlots(response.data.data || []);
+      const response = await api.get(`/counselors/${counselorId}/schedule?date=${date}`);
+      setAvailableSlots(response.data.data?.availableSlots || []);
     } catch (error) {
       console.error("Error fetching available slots:", error);
       toast.error("Không thể tải lịch trống");
@@ -75,7 +77,7 @@ const AppointmentBooking = () => {
   };
 
   const handleBooking = async () => {
-    if (!selectedCounselor || !selectedDate || !selectedTime) {
+    if (!selectedCounselor || !selectedDate || !selectedTime || !notes.trim()) {
       toast.error("Vui lòng điền đầy đủ thông tin");
       return;
     }
@@ -85,13 +87,20 @@ const AppointmentBooking = () => {
       const [startTime, endTime] = selectedTime.split("-");
       
       const response = await api.post("/appointments", {
-        counselorId: selectedCounselor._id,
+        counselorId: selectedCounselor.userId._id,
         appointmentDate: selectedDate,
         appointmentTime: {
           start: startTime.trim(),
           end: endTime.trim(),
         },
-        notes: notes.trim(),
+        type: appointmentType,
+        reason: notes.trim(),
+        urgency: urgency,
+        contactInfo: {
+          email: user.email,
+          phoneNumber: user.phone,
+          preferredContact: "email"
+        },
       });
 
       if (response.data.success) {
@@ -252,13 +261,13 @@ const AppointmentBooking = () => {
                                 {counselor.performance?.averageRating?.toFixed(1) || "5.0"}
                               </span>
                               <span className="text-sm text-gray-400 ml-2">
-                                ({counselor.performance?.totalAppointments || 0} buổi tư vấn)
+                                ({counselor.performance?.totalSessions || 0} buổi tư vấn)
                               </span>
                             </div>
                             
-                            {counselor.bio && (
+                            {counselor.biography && (
                               <p className="text-sm text-gray-600 line-clamp-3">
-                                {counselor.bio}
+                                {counselor.biography}
                               </p>
                             )}
                           </div>
@@ -267,7 +276,7 @@ const AppointmentBooking = () => {
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-600">
-                              Kinh nghiệm: {counselor.experience || "2+"} năm
+                              Kinh nghiệm: {counselor.experience?.totalYears || "2+"} năm
                             </span>
                             <button className="btn-outline text-sm">
                               Chọn chuyên viên
@@ -340,20 +349,23 @@ const AppointmentBooking = () => {
                     </label>
                     {availableSlots.length > 0 ? (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {availableSlots.map((slot, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleTimeSelect(slot)}
-                            className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
-                              selectedTime === slot
-                                ? "border-purple-500 bg-purple-50 text-purple-700"
-                                : "border-gray-200 hover:border-gray-300"
-                            }`}
-                          >
-                            <ClockIcon className="w-4 h-4 mx-auto mb-1" />
-                            {slot}
-                          </button>
-                        ))}
+                        {availableSlots.map((slot, index) => {
+                          const timeSlot = typeof slot === 'string' ? slot : `${slot.start}-${slot.end}`;
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => handleTimeSelect(timeSlot)}
+                              className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
+                                selectedTime === timeSlot
+                                  ? "border-purple-500 bg-purple-50 text-purple-700"
+                                  : "border-gray-200 hover:border-gray-300"
+                              }`}
+                            >
+                              <ClockIcon className="w-4 h-4 mx-auto mb-1" />
+                              {timeSlot}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-8 bg-gray-50 rounded-lg">
@@ -366,10 +378,43 @@ const AppointmentBooking = () => {
                   </div>
                 )}
 
+                {/* Appointment Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hình thức tư vấn
+                  </label>
+                  <select
+                    value={appointmentType}
+                    onChange={(e) => setAppointmentType(e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="online">Tư vấn online</option>
+                    <option value="in_person">Tư vấn trực tiếp</option>
+                    <option value="phone">Tư vấn qua điện thoại</option>
+                  </select>
+                </div>
+
+                {/* Urgency */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mức độ khẩn cấp
+                  </label>
+                  <select
+                    value={urgency}
+                    onChange={(e) => setUrgency(e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                    <option value="emergency">Khẩn cấp</option>
+                  </select>
+                </div>
+
                 {/* Notes */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ghi chú (tùy chọn)
+                    Lý do tư vấn <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={notes}
@@ -377,6 +422,7 @@ const AppointmentBooking = () => {
                     placeholder="Mô tả vấn đề bạn muốn tư vấn..."
                     className="form-input"
                     rows={4}
+                    required
                   />
                 </div>
               </div>
@@ -426,13 +472,36 @@ const AppointmentBooking = () => {
                       </div>
                     </div>
                     
+                    <div className="flex items-center">
+                      <div className="w-5 h-5 mr-3">
+                        <span className="text-gray-400">💻</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Hình thức: </span>
+                        {appointmentType === "online" ? "Tư vấn online" : 
+                         appointmentType === "in_person" ? "Tư vấn trực tiếp" : "Tư vấn qua điện thoại"}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <div className="w-5 h-5 mr-3">
+                        <span className="text-gray-400">🔥</span>
+                      </div>
+                      <div>
+                        <span className="font-medium">Mức độ: </span>
+                        {urgency === "low" ? "Thấp" : 
+                         urgency === "medium" ? "Trung bình" : 
+                         urgency === "high" ? "Cao" : "Khẩn cấp"}
+                      </div>
+                    </div>
+                    
                     {notes && (
                       <div className="flex items-start">
                         <div className="w-5 h-5 mr-3 mt-0.5">
                           <span className="text-gray-400">💬</span>
                         </div>
                         <div>
-                          <span className="font-medium">Ghi chú: </span>
+                          <span className="font-medium">Lý do: </span>
                           {notes}
                         </div>
                       </div>

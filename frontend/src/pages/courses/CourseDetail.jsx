@@ -54,9 +54,17 @@ const CourseDetail = () => {
   const fetchEnrollment = async () => {
     debugger
     try {
-      const response = await api.get(`/courses/${id}/enrollment`);
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/courses/${id}/enrollment`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.data.success) {
         setEnrollment(response.data.data);
+      }
+      if (enrollment.status === "enrolled") {
+        setEnrolling(true);
       }
     } catch (error) {
       // Not enrolled yet, which is fine
@@ -172,7 +180,10 @@ const CourseDetail = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               Không tìm thấy khóa học
             </h1>
-            <button onClick={() => navigate("/courses")} className="btn-primary">
+            <button
+              onClick={() => navigate("/courses")}
+              className="btn-primary"
+            >
               Quay lại danh sách khóa học
             </button>
           </div>
@@ -220,13 +231,16 @@ const CourseDetail = () => {
 
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelStyle(course.level)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelStyle(course.level)}`}
+                  >
                     {getLevelText(course.level)}
                   </span>
                   <div className="flex items-center text-yellow-500">
                     <StarIcon className="w-5 h-5 fill-current" />
                     <span className="ml-1 text-sm text-gray-600">
-                      {course.rating || "4.5"} ({course.reviewCount || 0} đánh giá)
+                      {course.rating || "4.5"} ({course.reviewCount || 0} đánh
+                      giá)
                     </span>
                   </div>
                 </div>
@@ -248,8 +262,13 @@ const CourseDetail = () => {
                     <BookOpenIcon className="w-5 h-5 mr-2" />
                     <span>
                       {course.modules
-                        ? course.modules.reduce((total, module) => total + (module.lessons?.length || 0), 0)
-                        : 0} bài học
+                        ? course.modules.reduce(
+                            (total, module) =>
+                              total + (module.lessons?.length || 0),
+                            0
+                          )
+                        : 0}{" "}
+                      bài học
                     </span>
                   </div>
                   <div className="flex items-center text-gray-600">
@@ -291,19 +310,28 @@ const CourseDetail = () => {
               <div className="border-b border-gray-200">
                 <nav className="flex space-x-8 px-6">
                   {[
-                    { id: "overview", label: "Tổng quan", icon: DocumentTextIcon },
+                    {
+                      id: "overview",
+                      label: "Tổng quan",
+                      icon: DocumentTextIcon,
+                    },
                     { id: "curriculum", label: "Nội dung", icon: BookOpenIcon },
-                    { id: "reviews", label: "Đánh giá", icon: ChatBubbleLeftEllipsisIcon },
+                    {
+                      id: "reviews",
+                      label: "Đánh giá",
+                      icon: ChatBubbleLeftEllipsisIcon,
+                    },
                   ].map((tab) => {
                     const Icon = tab.icon;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`py-4 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                          ? "border-green-500 text-green-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700"
-                          }`}
+                        className={`py-4 border-b-2 font-medium text-sm transition-colors ${
+                          activeTab === tab.id
+                            ? "border-green-500 text-green-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                       >
                         <Icon className="w-4 h-4 mr-2 inline" />
                         {tab.label}
@@ -367,24 +395,44 @@ const CourseDetail = () => {
                     <div className="space-y-6">
                       {course.modules?.map((module, moduleIdx) => (
                         <div key={module._id || moduleIdx}>
-                          <h4 className="font-semibold text-gray-800 mb-2">{module.title}</h4>
+                          <h4 className="font-semibold text-gray-800 mb-2">
+                            {module.title}
+                          </h4>
                           <div className="space-y-3">
                             {module.lessons?.map((lesson, lessonIdx) => {
                               const index = lessonIdx; // You may want to use a global index if needed
-                              const isAccessible = isLessonAccessible(lesson, index);
-                              const isCompleted = enrollment?.progress?.completedLessons?.includes(lesson._id);
+                              const isAccessible = isLessonAccessible(
+                                lesson,
+                                index
+                              );
+                              const isCompleted =
+                                enrollment?.progress?.completedLessons?.includes(
+                                  lesson._id
+                                );
 
                               return (
                                 <motion.div
                                   key={lesson._id}
-                                  className={`border rounded-lg p-4 transition-colors ${isAccessible ? "border-gray-200 hover:border-green-300" : "border-gray-100 bg-gray-50"
-                                    }`}
-                                  whileHover={isAccessible ? { scale: 1.01 } : {}}
+                                  className={`border rounded-lg p-4 transition-colors ${
+                                    isAccessible
+                                      ? "border-gray-200 hover:border-green-300"
+                                      : "border-gray-100 bg-gray-50"
+                                  }`}
+                                  whileHover={
+                                    isAccessible ? { scale: 1.01 } : {}
+                                  }
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center flex-1">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${isCompleted ? "bg-green-500" : isAccessible ? "bg-blue-500" : "bg-gray-300"
-                                        }`}>
+                                      <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                          isCompleted
+                                            ? "bg-green-500"
+                                            : isAccessible
+                                              ? "bg-blue-500"
+                                              : "bg-gray-300"
+                                        }`}
+                                      >
                                         {isCompleted ? (
                                           <CheckCircleIcon className="w-5 h-5 text-white" />
                                         ) : isAccessible ? (
@@ -394,23 +442,37 @@ const CourseDetail = () => {
                                         )}
                                       </div>
                                       <div className="flex-1">
-                                        <h4 className={`font-medium ${isAccessible ? "text-gray-900" : "text-gray-500"
-                                          }`}>
+                                        <h4
+                                          className={`font-medium ${
+                                            isAccessible
+                                              ? "text-gray-900"
+                                              : "text-gray-500"
+                                          }`}
+                                        >
                                           {lesson.title}
                                         </h4>
-                                        <p className={`text-sm ${isAccessible ? "text-gray-600" : "text-gray-400"
-                                          }`}>
+                                        <p
+                                          className={`text-sm ${
+                                            isAccessible
+                                              ? "text-gray-600"
+                                              : "text-gray-400"
+                                          }`}
+                                        >
                                           {lesson.description}
                                         </p>
                                       </div>
                                     </div>
                                     <div className="flex items-center text-sm text-gray-500 mr-4">
                                       <ClockIcon className="w-4 h-4 mr-1" />
-                                      <span>{formatDuration(lesson.duration)}</span>
+                                      <span>
+                                        {formatDuration(lesson.duration)}
+                                      </span>
                                     </div>
                                     {isAccessible && (
                                       <button
-                                        onClick={() => handleStartLessson(lesson._id)}
+                                        onClick={() =>
+                                          handleStartLessson(lesson._id)
+                                        }
                                         className="btn-outline text-sm"
                                       >
                                         {isCompleted ? "Xem lại" : "Bắt đầu"}
@@ -517,15 +579,21 @@ const CourseDetail = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Thời lượng:</span>
-                  <span className="font-medium">{formatDuration(course.duration)}</span>
+                  <span className="font-medium">
+                    {formatDuration(course.duration)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số bài học:</span>
-                  <span className="font-medium">{course.modules?.lessons?.length || 0}</span>
+                  <span className="font-medium">
+                    {course.modules?.lessons?.length || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Cấp độ:</span>
-                  <span className="font-medium">{getLevelText(course.level)}</span>
+                  <span className="font-medium">
+                    {getLevelText(course.level)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Ngôn ngữ:</span>
@@ -533,7 +601,9 @@ const CourseDetail = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Học viên:</span>
-                  <span className="font-medium">{course.enrollmentCount || 0}</span>
+                  <span className="font-medium">
+                    {course.enrollmentCount || 0}
+                  </span>
                 </div>
               </div>
             </div>

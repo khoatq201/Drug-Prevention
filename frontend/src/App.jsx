@@ -1,11 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import RegisterComplete from "./pages/auth/RegisterComplete";
+import OTPVerification from "./pages/auth/OTPVerification";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import GoogleAuthSuccess from "./pages/auth/GoogleAuthSuccess";
+import ProfileComplete from "./pages/auth/ProfileComplete";
 import Courses from "./pages/courses/Courses";
 import CourseDetail from "./pages/courses/CourseDetail";
 import Assessments from "./pages/assessments/Assessments";
@@ -32,13 +39,66 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route
+                path="/login"
+                element={
+                  <GuestRoute>
+                    <Login />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <GuestRoute>
+                    <Register />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/register/complete"
+                element={
+                  <GuestRoute>
+                    <RegisterComplete />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/otp-verification"
+                element={
+                  <GuestRoute>
+                    <OTPVerification />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/forgot-password"
+                element={
+                  <GuestRoute>
+                    <ForgotPassword />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/reset-password"
+                element={
+                  <GuestRoute>
+                    <ResetPassword />
+                  </GuestRoute>
+                }
+              />
+              <Route
+                path="/auth/google/success"
+                element={<GoogleAuthSuccess />}
+              />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetail />} />
               <Route path="/assessments" element={<Assessments />} />
               <Route path="/assessments/:id" element={<AssessmentDetail />} />
-              <Route path="/assessments/:assessmentId/result/:resultId" element={<AssessmentResult />} />
+              <Route
+                path="/assessments/:assessmentId/result/:resultId"
+                element={<AssessmentResult />}
+              />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:id" element={<BlogPost />} />
 
@@ -56,30 +116,31 @@ function App() {
 
           <Footer />
         </div>
-        
+
         {/* Toast Notifications */}
         <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#ffffff',
-              color: '#374151',
-              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem',
-              padding: '16px',
+              background: "#ffffff",
+              color: "#374151",
+              boxShadow:
+                "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e5e7eb",
+              borderRadius: "0.5rem",
+              padding: "16px",
             },
             success: {
               iconTheme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
+                primary: "#10b981",
+                secondary: "#ffffff",
               },
             },
             error: {
               iconTheme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
+                primary: "#ef4444",
+                secondary: "#ffffff",
               },
             },
           }}

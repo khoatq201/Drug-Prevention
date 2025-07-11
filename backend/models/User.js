@@ -28,7 +28,10 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Mật khẩu là bắt buộc"],
+      required: function () {
+        // Password không bắt buộc nếu có googleId hoặc chưa verify email
+        return !this.googleId && this.isEmailVerified;
+      },
       minlength: [6, "Mật khẩu phải có ít nhất 6 ký tự"],
     },
     phone: {
@@ -57,6 +60,11 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: null,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows multiple null values
     },
     isEmailVerified: {
       type: Boolean,
@@ -172,7 +180,8 @@ userSchema.virtual("fullName").get(function () {
 
 // Pre-save middleware to hash password
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // Chỉ hash password nếu password tồn tại và được modified
+  if (!this.password || !this.isModified("password")) return next();
 
   try {
     const salt = await bcrypt.genSalt(12);
@@ -185,7 +194,14 @@ userSchema.pre("save", async function (next) {
 
 // Method to check password
 userSchema.methods.checkPassword = async function (password) {
+  // Nếu không có mật khẩu (Google account hoặc chưa set), trả về false
+  if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
+};
+
+// Method to check if user has password set
+userSchema.methods.hasPassword = function () {
+  return !!this.password;
 };
 
 // Method to get current risk level
@@ -212,22 +228,47 @@ userSchema.methods.hasPermission = function (requiredRole) {
     manager: 4,
     admin: 5,
   };
-  
+
   return roleHierarchy[this.role] >= roleHierarchy[requiredRole];
 };
 
 // Method to check if user can access resource
 userSchema.methods.canAccess = function (resource) {
   const permissions = {
-    guest: ['blog', 'courses', 'assessments'],
-    member: ['blog', 'courses', 'assessments', 'appointments', 'profile'],
-    staff: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs'],
-    consultant: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs', 'counselor-management'],
-    manager: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs', 'counselor-management', 'user-management', 'reports'],
-    admin: ['all'],
+    guest: ["blog", "courses", "assessments"],
+    member: ["blog", "courses", "assessments", "appointments", "profile"],
+    staff: [
+      "blog",
+      "courses",
+      "assessments",
+      "appointments",
+      "profile",
+      "programs",
+    ],
+    consultant: [
+      "blog",
+      "courses",
+      "assessments",
+      "appointments",
+      "profile",
+      "programs",
+      "counselor-management",
+    ],
+    manager: [
+      "blog",
+      "courses",
+      "assessments",
+      "appointments",
+      "profile",
+      "programs",
+      "counselor-management",
+      "user-management",
+      "reports",
+    ],
+    admin: ["all"],
   };
-  
-  if (this.role === 'admin') return true;
+
+  if (this.role === "admin") return true;
   return permissions[this.role]?.includes(resource) || false;
 };
 

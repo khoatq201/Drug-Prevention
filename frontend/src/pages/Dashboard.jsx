@@ -81,9 +81,20 @@ const Dashboard = () => {
 
   const fetchUpcomingAppointments = async () => {
     try {
-      const response = await api.get("/appointments/my-appointments?upcoming=true&limit=3");
+      const response = await api.get("/appointments");
       if (response.data.success) {
-        setUpcomingAppointments(response.data.data || []);
+        const allAppointments = response.data.data || [];
+        
+        // Filter for upcoming appointments (pending or confirmed status and future date)
+        const upcoming = allAppointments.filter(appointment => {
+          const appointmentDate = new Date(appointment.appointmentDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          return appointmentDate >= today && (appointment.status === 'pending' || appointment.status === 'confirmed');
+        });
+        
+        setUpcomingAppointments(upcoming);
       }
     } catch (error) {
       console.error("Error fetching upcoming appointments:", error);

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../contexts/AuthContext";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import GoogleLoginButton from "../../components/Google/GoogleLoginButton";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +22,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     const result = await login(data.email, data.password);
     if (result.success) {
-      navigate(from, { replace: true });
+      navigate("/", { replace: true });
     }
   };
 
@@ -174,17 +175,25 @@ const Login = () => {
             </div>
 
             <div className="mt-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-600">
-                  Nếu bạn cần hỗ trợ, vui lòng{" "}
-                  <Link
-                    to="/contact"
-                    className="font-medium text-primary-600 hover:text-primary-500"
-                  >
-                    liên hệ với chúng tôi
-                  </Link>
-                </p>
-              </div>
+              <GoogleLoginButton
+                onError={(error) => {
+                  console.error("Google login error:", error);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Nếu bạn cần hỗ trợ, vui lòng{" "}
+                <Link
+                  to="/contact"
+                  className="font-medium text-primary-600 hover:text-primary-500"
+                >
+                  liên hệ với chúng tôi
+                </Link>
+              </p>
             </div>
           </div>
         </div>

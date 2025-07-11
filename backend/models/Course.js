@@ -13,6 +13,10 @@ const courseSchema = new mongoose.Schema(
       required: [true, "Mô tả khóa học là bắt buộc"],
       maxlength: [1000, "Mô tả không được vượt quá 1000 ký tự"],
     },
+    fullDescription: {
+      type: String,
+      maxlength: [5000, "Mô tả đầy đủ không được vượt quá 5000 ký tự"],
+    },
     category: {
       type: String,
       required: [true, "Danh mục khóa học là bắt buộc"],
@@ -46,6 +50,9 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    previewVideo: {
+      type: String, // YouTube URL or direct video URL
+    },
     modules: [
       {
         title: {
@@ -58,40 +65,6 @@ const courseSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        lessons: [
-          {
-            title: {
-              type: String,
-              required: true,
-              trim: true,
-            },
-            content: {
-              type: String,
-              required: true,
-            },
-            type: {
-              type: String,
-              enum: ["video", "text", "interactive", "quiz"],
-              default: "text",
-            },
-            duration: Number, // Thời lượng bài học tính bằng phút
-            videoUrl: String,
-            resources: [
-              {
-                title: String,
-                url: String,
-                type: {
-                  type: String,
-                  enum: ["pdf", "doc", "video", "audio", "link"],
-                },
-              },
-            ],
-            order: {
-              type: Number,
-              required: true,
-            },
-          },
-        ],
         quiz: {
           questions: [
             {
@@ -125,6 +98,9 @@ const courseSchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+        firstName: String,
+        lastName: String,
+        title: String,
         bio: String,
         credentials: [String],
         avatar: String,
@@ -132,11 +108,12 @@ const courseSchema = new mongoose.Schema(
       },
     ],
     prerequisites: [String],
-    learningObjectives: [String],
+    objectives: [String], // What students will learn
+    requirements: [String], // What students need before starting
     certificate: {
       isAvailable: {
         type: Boolean,
-        default: false,
+        default: true,
       },
       template: String,
       requirements: {
@@ -174,6 +151,7 @@ const courseSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      originalPrice: Number,
       currency: {
         type: String,
         default: "VND",
@@ -191,6 +169,25 @@ const courseSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    // Course statistics
+    stats: {
+      totalLessons: {
+        type: Number,
+        default: 0,
+      },
+      totalDuration: {
+        type: Number,
+        default: 0,
+      },
+      completionRate: {
+        type: Number,
+        default: 0,
+      },
+      averageTimeToComplete: {
+        type: Number,
+        default: 0,
+      },
+    },
     isPublished: {
       type: Boolean,
       default: false,
@@ -202,6 +199,40 @@ const courseSchema = new mongoose.Schema(
       enum: ["vi", "en"],
       default: "vi",
     },
+    // SEO and metadata
+    seo: {
+      metaTitle: String,
+      metaDescription: String,
+      keywords: [String],
+    },
+    // Course settings
+    settings: {
+      allowDiscussions: {
+        type: Boolean,
+        default: true,
+      },
+      allowDownloads: {
+        type: Boolean,
+        default: true,
+      },
+      showProgress: {
+        type: Boolean,
+        default: true,
+      },
+      certificateAutoIssue: {
+        type: Boolean,
+        default: true,
+      },
+    },
+    // Course creator
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    lastModifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,
@@ -210,7 +241,7 @@ const courseSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for total lessons count
+// Virtual for total lessons count (from stats)
 courseSchema.virtual("totalLessons").get(function () {
   if (!Array.isArray(this.modules)) return 0;
   return this.modules.reduce(
@@ -219,7 +250,7 @@ courseSchema.virtual("totalLessons").get(function () {
   );
 });
 
-// Virtual for estimated completion time
+// Virtual for estimated completion time (from stats)
 courseSchema.virtual("estimatedTime").get(function () {
   if (!Array.isArray(this.modules)) return 0;
   return this.modules.reduce((total, module) => {
@@ -280,4 +311,21 @@ courseSchema.methods.canEnroll = function () {
   return true;
 };
 
+// Method to update course statistics
+courseSchema.methods.updateStats = async function () {
+  const Lesson = require("./Lesson");
+  
+  // Get all lessons for this course
+  const lessons = await Lesson.find({ courseId: this._id, isPublished: true });
+  
+  this.stats.totalLessons = lessons.length;
+  this.stats.totalDuration = lessons.reduce((total, lesson) => total + (lesson.duration || 0), 0);
+  
+  // Update duration if not set
+  if (!this.duration || this.duration === 0) {
+    this.duration = this.stats.totalDuration;
+  }
+  
+  return this.save();
+};
 module.exports = mongoose.model("Course", courseSchema);
