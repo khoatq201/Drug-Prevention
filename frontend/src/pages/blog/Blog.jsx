@@ -23,7 +23,6 @@ const Blog = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Mapping categories to Vietnamese
   const categoryLabels = {
     news: "Tin tức",
     education: "Giáo dục",
@@ -86,13 +85,14 @@ const Blog = () => {
   };
 
   const truncateText = (text, maxLength = 150) => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 },
   };
 
   const staggerContainer = {
@@ -100,20 +100,19 @@ const Blog = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gray-50 py-12"
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div className="text-center mb-12" variants={fadeInUp}>
           <DocumentTextIcon className="mx-auto h-16 w-16 text-blue-600 mb-4" />
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -125,10 +124,8 @@ const Blog = () => {
           </p>
         </motion.div>
 
-        {/* Search and Filters */}
         <motion.div className="bg-white rounded-lg shadow-md p-6 mb-8" variants={fadeInUp}>
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
             <div className="flex-1 relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -139,8 +136,6 @@ const Blog = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-
-            {/* Filter Toggle (Mobile) */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="lg:hidden btn-outline"
@@ -148,8 +143,6 @@ const Blog = () => {
               <FunnelIcon className="w-5 h-5 mr-2" />
               Bộ lọc
             </button>
-
-            {/* Category Filter (Desktop) */}
             <div className="hidden lg:block">
               <select
                 value={selectedCategory}
@@ -165,10 +158,8 @@ const Blog = () => {
               </select>
             </div>
           </div>
-
-          {/* Mobile Filters */}
           {showFilters && (
-            <motion.div 
+            <motion.div
               className="lg:hidden mt-4 pt-4 border-t border-gray-200"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -191,9 +182,7 @@ const Blog = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Featured Posts */}
             {featuredPosts.length > 0 && !searchTerm && !selectedCategory && (
               <motion.div className="mb-12" variants={fadeInUp}>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Bài viết nổi bật</h2>
@@ -214,7 +203,6 @@ const Blog = () => {
                           />
                         </div>
                       )}
-                      
                       <div className="p-6">
                         <div className="flex items-center justify-between mb-3">
                           <span className="blog-category">
@@ -225,15 +213,12 @@ const Blog = () => {
                             <span>{post.views?.count || 0}</span>
                           </div>
                         </div>
-
                         <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
                           {post.title}
                         </h3>
-                        
                         <p className="text-gray-600 mb-4 line-clamp-3">
-                          {post.excerpt}
+                          {truncateText(post.excerpt)}
                         </p>
-
                         <div className="flex items-center justify-between">
                           <div className="flex items-center text-sm text-gray-500">
                             <CalendarIcon className="w-4 h-4 mr-1" />
@@ -252,13 +237,10 @@ const Blog = () => {
                 </div>
               </motion.div>
             )}
-
-            {/* Regular Posts */}
             <motion.div variants={fadeInUp}>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 {searchTerm || selectedCategory ? "Kết quả tìm kiếm" : "Bài viết mới nhất"}
               </h2>
-              
               {loading ? (
                 <div className="flex justify-center py-12">
                   <div className="spinner"></div>
@@ -284,7 +266,6 @@ const Blog = () => {
                             </div>
                           </div>
                         )}
-                        
                         <div className="p-6 flex-1">
                           <div className="flex items-center justify-between mb-3">
                             <span className="blog-category">
@@ -305,19 +286,18 @@ const Blog = () => {
                               </div>
                             </div>
                           </div>
-
                           <h3 className="text-xl font-semibold text-gray-900 mb-2">
                             {post.title}
                           </h3>
-                          
                           <p className="text-gray-600 mb-4">
                             {truncateText(post.excerpt)}
                           </p>
-
                           <div className="flex items-center justify-between">
                             <div className="flex items-center text-sm text-gray-500">
                               <UserIcon className="w-4 h-4 mr-1" />
-                              <span>{post.author?.firstName} {post.author?.lastName}</span>
+                              <span>
+                                {post.author?.firstName} {post.author?.lastName}
+                              </span>
                               <span className="mx-2">•</span>
                               <CalendarIcon className="w-4 h-4 mr-1" />
                               <span>{formatDate(post.publishedAt)}</span>
@@ -356,10 +336,7 @@ const Blog = () => {
               )}
             </motion.div>
           </div>
-
-          {/* Sidebar */}
           <motion.div className="space-y-6" variants={fadeInUp}>
-            {/* Categories */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Danh mục</h3>
               <div className="space-y-2">
@@ -381,8 +358,6 @@ const Blog = () => {
                 ))}
               </div>
             </div>
-
-            {/* Newsletter Signup */}
             <div className="bg-blue-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-blue-900 mb-2">
                 Đăng ký nhận tin
@@ -401,8 +376,6 @@ const Blog = () => {
                 </button>
               </div>
             </div>
-
-            {/* Popular Posts */}
             {featuredPosts.length > 2 && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Bài viết phổ biến</h3>

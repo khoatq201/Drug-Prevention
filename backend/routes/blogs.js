@@ -79,12 +79,12 @@ router.get("/", async (req, res) => {
         sortOptions = { publishedAt: -1 };
     }
 
-    const posts = await Blog.find(query)
-      .populate("author", "firstName lastName avatar")
-      .select("-content -comments")
-      .sort(sortOptions)
-      .limit(parseInt(limit))
-      .skip(skip);
+const posts = await Blog.find(query)
+  .populate("author", "firstName lastName avatar")
+  .select("-content") // Only exclude content
+  .sort(sortOptions)
+  .limit(parseInt(limit))
+  .skip(skip);
 
     const total = await Blog.countDocuments(query);
 
@@ -325,6 +325,118 @@ router.get("/tags", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy thẻ tag",
+    });
+  }
+});
+
+router.get("/:identifier/comments", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let query = {};
+    if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
+      query._id = identifier;
+    } else {
+      query.slug = identifier;
+    }
+
+    const post = await Blog.findOne(query)
+      .populate("comments.userId", "firstName lastName avatar")
+      .select("comments");
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    // Filter approved comments for non-staff users
+    let comments = post.comments;
+    if (!req.user || !req.user.hasPermission("staff")) {
+      comments = comments.filter(comment => comment.isApproved);
+    }
+
+    res.json({
+      success: true,
+      data: comments,
+    });
+  } catch (error) {
+    console.error("Get comments error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy bình luận",
+    });
+  }
+});
+
+// New route: Get related posts
+router.get("/:identifier/related", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let query = {};
+    if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
+      query._id = identifier;
+    } else {
+      query.slug = identifier;
+    }
+
+    const post = await Blog.findOne(query);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    const relatedPosts = await post.getRelatedPosts(3);
+
+    res.json({
+      success: true,
+      data: relatedPosts,
+    });
+  } catch (error) {
+    console.error("Get related posts error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy bài viết liên quan",
+    });
+  }
+});
+
+// New route: Increment view count
+router.post("/:identifier/view", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let query = {};
+    if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
+      query._id = identifier;
+    } else {
+      query.slug = identifier;
+    }
+
+    const post = await Blog.findOne(query);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    await post.incrementViews(req.user?._id);
+
+    res.json({
+      success: true,
+      message: "Đã ghi nhận lượt xem",
+      data: {
+        views: post.views.count,
+        uniqueViews: post.views.uniqueViews,
+      },
+    });
+  } catch (error) {
+    console.error("Increment view error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi ghi nhận lượt xem",
     });
   }
 });

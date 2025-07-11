@@ -58,16 +58,17 @@ const BlogPost = () => {
         setLikesCount(postData.likes?.length || 0);
         
         if (isAuthenticated && user) {
-          setIsLiked(postData.likes?.includes(user._id) || false);
+          setIsLiked(postData.isLiked || false);
           setIsBookmarked(user.bookmarkedPosts?.includes(postData._id) || false);
         }
         
-        // Track view
         await api.post(`/blogs/${id}/view`);
+      } else {
+        throw new Error(response.data.message || "Không thể tải bài viết");
       }
     } catch (error) {
       console.error("Error fetching post:", error);
-      toast.error("Không thể tải bài viết");
+      toast.error(error.message || "Không thể tải bài viết");
       navigate("/blog");
     } finally {
       setLoading(false);
@@ -79,9 +80,14 @@ const BlogPost = () => {
       const response = await api.get(`/blogs/${id}/comments`);
       if (response.data.success) {
         setComments(response.data.data || []);
+      } else {
+        setComments([]);
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
+      setComments([]);
+      // Optionally, show a toast only if critical
+      // toast.error("Không thể tải bình luận");
     }
   };
 
@@ -90,9 +96,14 @@ const BlogPost = () => {
       const response = await api.get(`/blogs/${id}/related`);
       if (response.data.success) {
         setRelatedPosts(response.data.data || []);
+      } else {
+        setRelatedPosts([]);
       }
     } catch (error) {
       console.error("Error fetching related posts:", error);
+      setRelatedPosts([]);
+      // Optionally, show a toast only if critical
+      // toast.error("Không thể tải bài viết liên quan");
     }
   };
 
@@ -105,8 +116,8 @@ const BlogPost = () => {
     try {
       const response = await api.post(`/blogs/${id}/like`);
       if (response.data.success) {
-        setIsLiked(!isLiked);
-        setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+        setIsLiked(response.data.data.isLiked);
+        setLikesCount(response.data.data.likesCount);
       }
     } catch (error) {
       console.error("Error liking post:", error);
@@ -148,17 +159,17 @@ const BlogPost = () => {
     try {
       setSubmittingComment(true);
       const response = await api.post(`/blogs/${id}/comments`, {
-        content: newComment.trim()
+        content: newComment.trim(),
       });
       
       if (response.data.success) {
         setComments(prev => [response.data.data, ...prev]);
         setNewComment("");
-        toast.success("Đã thêm bình luận!");
+        toast.success(response.data.message || "Đã thêm bình luận!");
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
-      toast.error("Không thể thêm bình luận");
+      toast.error(error.message || "Không thể thêm bình luận");
     } finally {
       setSubmittingComment(false);
     }
@@ -176,7 +187,6 @@ const BlogPost = () => {
         console.log("Error sharing:", error);
       }
     } else {
-      // Fallback - copy to clipboard
       try {
         await navigator.clipboard.writeText(window.location.href);
         toast.success("Đã sao chép link bài viết!");
@@ -236,7 +246,6 @@ const BlogPost = () => {
       animate={{ opacity: 1 }}
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
         <motion.button
           onClick={() => navigate("/blog")}
           className="mb-6 btn-outline"
@@ -247,14 +256,12 @@ const BlogPost = () => {
           Quay lại Blog
         </motion.button>
 
-        {/* Article Header */}
         <motion.article 
           className="bg-white rounded-lg shadow-md overflow-hidden mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {/* Featured Image */}
-          {post.featuredImage && (
+          {post.featuredImage?.url && (
             <div className="aspect-video bg-gray-200">
               <img
                 src={post.featuredImage.url}
@@ -265,33 +272,31 @@ const BlogPost = () => {
           )}
           
           <div className="p-8">
-            {/* Category */}
             <div className="mb-4">
               <span className="blog-category">
                 {categoryLabels[post.category] || post.category}
               </span>
             </div>
 
-            {/* Title */}
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {post.title}
             </h1>
 
-            {/* Excerpt */}
             {post.excerpt && (
               <p className="text-xl text-gray-600 mb-6">
                 {post.excerpt}
               </p>
             )}
 
-            {/* Meta Information */}
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6">
-              <div className="flex items-center">
-                <UserIcon className="w-4 h-4 mr-2" />
-                <span>
-                  {post.author?.firstName} {post.author?.lastName}
-                </span>
-              </div>
+              {post.settings.showAuthor && (
+                <div className="flex items-center">
+                  <UserIcon className="w-4 h-4 mr-2" />
+                  <span>
+                    {post.author?.firstName} {post.author?.lastName}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center">
                 <CalendarIcon className="w-4 h-4 mr-2" />
                 <span>{formatDate(post.publishedAt)}</span>
@@ -306,23 +311,24 @@ const BlogPost = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-4 mb-8 pb-8 border-b border-gray-200">
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  isLiked 
-                    ? "bg-red-100 text-red-700" 
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {isLiked ? (
-                  <HeartSolidIcon className="w-5 h-5" />
-                ) : (
-                  <HeartIcon className="w-5 h-5" />
-                )}
-                <span>{likesCount}</span>
-              </button>
+              {post.settings.allowLikes && (
+                <button
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isLiked 
+                      ? "bg-red-100 text-red-700" 
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {isLiked ? (
+                    <HeartSolidIcon className="w-5 h-5" />
+                  ) : (
+                    <HeartIcon className="w-5 h-5" />
+                  )}
+                  <span>{likesCount}</span>
+                </button>
+              )}
               
               <button
                 onClick={handleBookmark}
@@ -349,14 +355,12 @@ const BlogPost = () => {
               </button>
             </div>
 
-            {/* Content */}
             <div 
               className="prose max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 && (
+            {post.tags?.length > 0 && (
               <div className="mt-8 pt-8 border-t border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Thẻ</h3>
                 <div className="flex flex-wrap gap-2">
@@ -374,85 +378,83 @@ const BlogPost = () => {
           </div>
         </motion.article>
 
-        {/* Comments Section */}
-        <motion.div 
-          className="bg-white rounded-lg shadow-md p-8 mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="flex items-center mb-6">
-            <ChatBubbleLeftIcon className="w-6 h-6 text-gray-600 mr-3" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              Bình luận ({comments.length})
-            </h2>
-          </div>
-
-          {/* Comment Form */}
-          {isAuthenticated ? (
-            <form onSubmit={handleCommentSubmit} className="mb-8">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Chia sẻ suy nghĩ của bạn..."
-                className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                rows={4}
-              />
-              <div className="flex justify-end mt-3">
-                <button
-                  type="submit"
-                  disabled={submittingComment || !newComment.trim()}
-                  className="btn-primary disabled:opacity-50"
-                >
-                  {submittingComment ? "Đang gửi..." : "Gửi bình luận"}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="mb-8 p-4 bg-gray-50 rounded-lg text-center">
-              <p className="text-gray-600 mb-3">
-                Vui lòng đăng nhập để bình luận
-              </p>
-              <Link to="/login" className="btn-primary">
-                Đăng nhập
-              </Link>
+        {post.settings.allowComments && (
+          <motion.div 
+            className="bg-white rounded-lg shadow-md p-8 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center mb-6">
+              <ChatBubbleLeftIcon className="w-6 h-6 text-gray-600 mr-3" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Bình luận ({comments.length})
+              </h2>
             </div>
-          )}
 
-          {/* Comments List */}
-          <div className="space-y-6">
-            {comments.map((comment) => (
-              <div key={comment._id} className="border-b border-gray-200 pb-6 last:border-b-0">
-                <div className="flex items-start">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center mr-4">
-                    <UserIcon className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <h4 className="font-medium text-gray-900">
-                        {comment.author?.firstName} {comment.author?.lastName}
-                      </h4>
-                      <span className="mx-2 text-gray-400">•</span>
-                      <span className="text-sm text-gray-500">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-gray-700">{comment.content}</p>
-                  </div>
+            {isAuthenticated ? (
+              <form onSubmit={handleCommentSubmit} className="mb-8">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Chia sẻ suy nghĩ của bạn..."
+                  className="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  rows={4}
+                />
+                <div className="flex justify-end mt-3">
+                  <button
+                    type="submit"
+                    disabled={submittingComment || !newComment.trim()}
+                    className="btn-primary disabled:opacity-50"
+                  >
+                    {submittingComment ? "Đang gửi..." : "Gửi bình luận"}
+                  </button>
                 </div>
-              </div>
-            ))}
-            
-            {comments.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p>Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+              </form>
+            ) : (
+              <div className="mb-8 p-4 bg-gray-50 rounded-lg text-center">
+                <p className="text-gray-600 mb-3">
+                  Vui lòng đăng nhập để bình luận
+                </p>
+                <Link to="/login" className="btn-primary">
+                  Đăng nhập
+                </Link>
               </div>
             )}
-          </div>
-        </motion.div>
 
-        {/* Related Posts */}
+            <div className="space-y-6">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment._id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                    <div className="flex items-start">
+                      <div className="w-10 h-10 bg-gray-300 rounded-full flex-items-center justify-center mr-4">
+                        <UserIcon className="w-6 h-6 text-gray-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center mb-2">
+                          <h4 className="font-medium text-gray-900">
+                            {comment.userId?.firstName} {comment.userId?.lastName}
+                          </h4>
+                          <span className="mx-2 text-gray-400">•</span>
+                          <span className="text-sm text-gray-500">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-gray-700">{comment.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <ChatBubbleLeftIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>Chưa có bình luận nào. Hãy là người đầu tiên!</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {relatedPosts.length > 0 && (
           <motion.div 
             className="bg-white rounded-lg shadow-md p-8"
@@ -471,7 +473,7 @@ const BlogPost = () => {
                   className="group"
                 >
                   <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                    {relatedPost.featuredImage && (
+                    {relatedPost.featuredImage?.url && (
                       <div className="aspect-video bg-gray-200">
                         <img
                           src={relatedPost.featuredImage.url}

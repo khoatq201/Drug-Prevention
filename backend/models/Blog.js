@@ -32,15 +32,15 @@ const blogSchema = new mongoose.Schema(
       type: String,
       required: [true, "Danh mục bài viết là bắt buộc"],
       enum: [
-        "news", // Tin tức
-        "education", // Giáo dục
-        "prevention", // Phòng ngừa
-        "research", // Nghiên cứu
-        "success_stories", // Câu chuyện thành công
-        "community", // Cộng đồng
-        "health", // Sức khỏe
-        "family", // Gia đình
-        "resources", // Tài nguyên
+        "news",
+        "education",
+        "prevention",
+        "research",
+        "success_stories",
+        "community",
+        "health",
+        "family",
+        "resources",
       ],
     },
     tags: [
@@ -71,7 +71,6 @@ const blogSchema = new mongoose.Schema(
       enum: ["vi", "en"],
       default: "vi",
     },
-    // SEO and metadata
     seo: {
       metaTitle: String,
       metaDescription: {
@@ -81,14 +80,12 @@ const blogSchema = new mongoose.Schema(
       keywords: [String],
       ogImage: String,
     },
-    // Publishing information
     publishedAt: Date,
     scheduledFor: Date,
     lastModifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    // Engagement metrics
     views: {
       count: {
         type: Number,
@@ -112,7 +109,6 @@ const blogSchema = new mongoose.Schema(
         },
       },
     ],
-    // Comments system
     comments: [
       {
         userId: {
@@ -176,7 +172,6 @@ const blogSchema = new mongoose.Schema(
         },
       },
     ],
-    // Content settings
     settings: {
       allowComments: {
         type: Boolean,
@@ -203,23 +198,20 @@ const blogSchema = new mongoose.Schema(
         default: true,
       },
     },
-    // Reading metrics
     readingTime: {
-      type: Number, // minutes
+      type: Number,
       default: 0,
     },
     wordCount: {
       type: Number,
       default: 0,
     },
-    // Related content
     relatedPosts: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Blog",
       },
     ],
-    // Access control
     visibility: {
       type: String,
       enum: ["public", "members_only", "staff_only"],
@@ -233,50 +225,46 @@ const blogSchema = new mongoose.Schema(
   }
 );
 
-// Indexes for efficient queries
+// Indexes for efficient queries (remove duplicates)
 blogSchema.index({ status: 1, publishedAt: -1 });
 blogSchema.index({ category: 1, status: 1 });
 blogSchema.index({ tags: 1, status: 1 });
 blogSchema.index({ author: 1, status: 1 });
-blogSchema.index({ slug: 1 });
 blogSchema.index({ targetAudience: 1, status: 1 });
-blogSchema.index({ 
-  title: "text", 
-  excerpt: "text", 
+blogSchema.index({
+  title: "text",
+  excerpt: "text",
   content: "text",
-  tags: "text"
+  tags: "text",
 });
 
-// Virtual for total likes count
+// Remove redundant indexes (createdAt is handled by timestamps, userId is not explicitly indexed)
+blogSchema.index({ slug: 1 }, { unique: true }); // Explicitly define for clarity
+
+// Virtuals and methods remain unchanged
 blogSchema.virtual("likesCount").get(function () {
   return this.likes.length;
 });
 
-// Virtual for total comments count
 blogSchema.virtual("commentsCount").get(function () {
-  return this.comments.filter(comment => comment.isApproved).length;
+  return (this.comments || []).filter(comment => comment.isApproved).length;
 });
 
-// Virtual for approved comments
 blogSchema.virtual("approvedComments").get(function () {
-  return this.comments.filter(comment => comment.isApproved);
+  return (this.comments || []).filter(comment => comment.isApproved);
 });
 
-// Virtual for reading time calculation
 blogSchema.virtual("estimatedReadingTime").get(function () {
   if (this.readingTime > 0) return this.readingTime;
-  
   const wordsPerMinute = 200;
-  const words = this.wordCount || this.content.split(' ').length;
+  const words = this.wordCount || this.content.split(" ").length;
   return Math.ceil(words / wordsPerMinute);
 });
 
-// Virtual for checking if post is published
 blogSchema.virtual("isPublished").get(function () {
   return this.status === "published" && this.publishedAt && this.publishedAt <= new Date();
 });
 
-// Pre-save middleware to generate slug
 blogSchema.pre("save", function (next) {
   if (this.isModified("title") && !this.slug) {
     this.slug = this.title
@@ -287,39 +275,30 @@ blogSchema.pre("save", function (next) {
       .replace(/-+/g, "-")
       .replace(/^-+|-+$/g, "");
   }
-  
-  // Calculate word count and reading time
   if (this.isModified("content")) {
     this.wordCount = this.content.split(/\s+/).length;
     this.readingTime = Math.ceil(this.wordCount / 200);
   }
-  
-  // Set publishedAt when status changes to published
   if (this.isModified("status") && this.status === "published" && !this.publishedAt) {
     this.publishedAt = new Date();
   }
-  
   next();
 });
 
-// Static method to search posts
 blogSchema.statics.searchPosts = function (query, filters = {}) {
   const searchCriteria = {
     status: "published",
     publishedAt: { $lte: new Date() },
     ...filters,
   };
-
   if (query) {
     searchCriteria.$text = { $search: query };
   }
-
   return this.find(searchCriteria)
     .populate("author", "firstName lastName avatar")
     .sort({ publishedAt: -1 });
 };
 
-// Static method to get posts by category
 blogSchema.statics.findByCategory = function (category, options = {}) {
   const query = {
     category,
@@ -327,13 +306,11 @@ blogSchema.statics.findByCategory = function (category, options = {}) {
     publishedAt: { $lte: new Date() },
     ...options,
   };
-
   return this.find(query)
     .populate("author", "firstName lastName avatar")
     .sort({ publishedAt: -1 });
 };
 
-// Static method to get featured posts
 blogSchema.statics.getFeaturedPosts = function (limit = 5) {
   return this.find({
     status: "published",
@@ -345,11 +322,9 @@ blogSchema.statics.getFeaturedPosts = function (limit = 5) {
     .limit(limit);
 };
 
-// Static method to get popular posts
 blogSchema.statics.getPopularPosts = function (limit = 10, days = 30) {
   const since = new Date();
   since.setDate(since.getDate() - days);
-
   return this.find({
     status: "published",
     publishedAt: { $lte: new Date(), $gte: since },
@@ -359,25 +334,19 @@ blogSchema.statics.getPopularPosts = function (limit = 10, days = 30) {
     .limit(limit);
 };
 
-// Method to increment view count
 blogSchema.methods.incrementViews = async function (userId = null) {
   this.views.count += 1;
   this.views.lastViewedAt = new Date();
-  
-  // Track unique views (simplified - in production, use more sophisticated tracking)
   if (userId) {
     this.views.uniqueViews += 1;
   }
-  
   return this.save();
 };
 
-// Method to toggle like
 blogSchema.methods.toggleLike = async function (userId) {
   const existingLike = this.likes.find(
     like => like.userId.toString() === userId.toString()
   );
-
   if (existingLike) {
     this.likes = this.likes.filter(
       like => like.userId.toString() !== userId.toString()
@@ -385,27 +354,22 @@ blogSchema.methods.toggleLike = async function (userId) {
   } else {
     this.likes.push({ userId });
   }
-
   return this.save();
 };
 
-// Method to add comment
 blogSchema.methods.addComment = async function (commentData) {
   if (!this.settings.allowComments) {
     throw new Error("Comments are not allowed on this post");
   }
-
   const comment = {
     ...commentData,
     isApproved: !this.settings.requireApproval,
     createdAt: new Date(),
   };
-
   this.comments.push(comment);
   return this.save();
 };
 
-// Method to get related posts
 blogSchema.methods.getRelatedPosts = async function (limit = 3) {
   const relatedPosts = await this.constructor
     .find({
@@ -421,19 +385,15 @@ blogSchema.methods.getRelatedPosts = async function (limit = 3) {
     .populate("author", "firstName lastName avatar")
     .sort({ publishedAt: -1 })
     .limit(limit);
-
   return relatedPosts;
 };
 
-// Method to generate excerpt from content if not provided
 blogSchema.methods.generateExcerpt = function (length = 160) {
   if (this.excerpt) return this.excerpt;
-  
   const cleanContent = this.content
-    .replace(/<[^>]*>/g, "") // Remove HTML tags
-    .replace(/\s+/g, " ") // Normalize whitespace
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
     .trim();
-  
   return cleanContent.length > length
     ? cleanContent.substring(0, length) + "..."
     : cleanContent;
