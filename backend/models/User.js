@@ -46,8 +46,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "counselor", "admin"],
-      default: "user",
+      enum: ["guest", "member", "staff", "consultant", "manager", "admin"],
+      default: "guest",
     },
     ageGroup: {
       type: String,
@@ -195,6 +195,35 @@ userSchema.methods.getCurrentRiskLevel = function () {
 // Static method to find users by age group
 userSchema.statics.findByAgeGroup = function (ageGroup) {
   return this.find({ ageGroup, isActive: true });
+};
+
+// Method to check role permissions
+userSchema.methods.hasPermission = function (requiredRole) {
+  const roleHierarchy = {
+    guest: 0,
+    member: 1,
+    staff: 2,
+    consultant: 3,
+    manager: 4,
+    admin: 5,
+  };
+  
+  return roleHierarchy[this.role] >= roleHierarchy[requiredRole];
+};
+
+// Method to check if user can access resource
+userSchema.methods.canAccess = function (resource) {
+  const permissions = {
+    guest: ['blog', 'courses', 'assessments'],
+    member: ['blog', 'courses', 'assessments', 'appointments', 'profile'],
+    staff: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs'],
+    consultant: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs', 'counselor-management'],
+    manager: ['blog', 'courses', 'assessments', 'appointments', 'profile', 'programs', 'counselor-management', 'user-management', 'reports'],
+    admin: ['all'],
+  };
+  
+  if (this.role === 'admin') return true;
+  return permissions[this.role]?.includes(resource) || false;
 };
 
 module.exports = mongoose.model("User", userSchema);
