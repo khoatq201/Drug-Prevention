@@ -526,7 +526,7 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
     console.log("Fetching enrolled courses for userId:", userId);
     const user = await User.findById(userId).populate({
       path: "courseHistory.courseId",
-      select: "title description thumbnail category level duration ratings",
+      select: "title description thumbnail category level duration ratings modules",
     });
     if (!user) {
       console.error("User not found for userId:", userId);

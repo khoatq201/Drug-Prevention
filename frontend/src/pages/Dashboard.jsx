@@ -232,7 +232,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Khóa học</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {stats.coursesCompleted}/{stats.coursesEnrolled}
+                  {enrolledCourses.length}
                 </p>
               </div>
             </div>
@@ -351,7 +351,12 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {enrolledCourses.map((enrollment) => {
                       const course = enrollment.courseId || enrollment;
-                      const progress = enrollment.progress?.percent || 0;
+                      // Flatten all lessons from all modules
+                      const allLessons = course.modules?.flatMap(m => m.lessons || []) || [];
+                      const completedLessons = enrollment.progress?.completedLessons || [];
+                      const progress = allLessons.length > 0
+                        ? Math.round((completedLessons.length / allLessons.length) * 100)
+                        : 0;
                       return (
                         <div key={course._id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-start justify-between mb-3">
@@ -425,22 +430,22 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 space-y-3">
-                <Link to="/assessments" className="quick-action-btn">
+                <Link to="/assessments" className="quick-action-btn flex items-center">
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
                   Làm bài đánh giá
                 </Link>
                 
-                <Link to="/courses" className="quick-action-btn">
+                <Link to="/courses" className="quick-action-btn flex items-center">
                   <AcademicCapIcon className="w-5 h-5 mr-3" />
                   Tham gia khóa học
                 </Link>
                 
-                <Link to="/appointments/book" className="quick-action-btn">
+                <Link to="/appointments/book" className="quick-action-btn flex items-center">
                   <CalendarDaysIcon className="w-5 h-5 mr-3" />
                   Đặt lịch tư vấn
                 </Link>
                 
-                <Link to="/programs" className="quick-action-btn">
+                <Link to="/programs" className="quick-action-btn flex items-center">
                   <UserGroupIcon className="w-5 h-5 mr-3" />
                   Tham gia chương trình
                 </Link>
