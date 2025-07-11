@@ -654,7 +654,7 @@ const counselorData = [
     phone: "0901234567",
     role: "consultant",
     ageGroup: "other",
-    specialization: "Tâm lý lâm sàng",
+    specializations: ["addiction_counseling", "cognitive_behavioral", "family_therapy"],
     experience: 8,
     education: [
       {
@@ -678,17 +678,58 @@ const counselorData = [
     ],
     bio: "Tiến sĩ Lan có hơn 8 năm kinh nghiệm trong lĩnh vực tư vấn và điều trị nghiện chất. Bà chuyên về liệu pháp nhận thức hành vi và đã giúp đỡ hàng trăm bệnh nhân vượt qua vấn đề nghiện.",
     expertise: ["Nghiện chất", "Rối loạn lo âu", "Trầm cảm", "Tư vấn gia đình"],
-    languages: ["Tiếng Việt", "Tiếng Anh"],
+    languages: [
+      { language: "vi", proficiency: "native" },
+      { language: "en", proficiency: "advanced" }
+    ],
+    clientTypes: ["individual", "family", "adults"],
     availability: {
-      monday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      tuesday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      wednesday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      thursday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      friday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      saturday: { available: true, timeSlots: ["08:00", "09:00", "10:00"] },
+      monday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      tuesday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      wednesday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      thursday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      friday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      saturday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" }
+      ]},
       sunday: { available: false, timeSlots: [] }
     },
-    consultationTypes: ["online", "in-person"],
+    sessionTypes: [
+      { type: "individual", duration: 60, price: 700000 },
+      { type: "family", duration: 90, price: 900000 }
+    ],
     fees: {
       online: 500000,
       inPerson: 700000
@@ -708,7 +749,7 @@ const counselorData = [
     phone: "0907654321",
     role: "consultant",
     ageGroup: "other",
-    specialization: "Tâm lý trị liệu",
+    specializations: ["addiction_counseling", "trauma_therapy", "crisis_intervention", "recovery_coaching"],
     experience: 12,
     education: [
       {
@@ -732,17 +773,53 @@ const counselorData = [
     ],
     bio: "Tiến sĩ Hoàng là bác sĩ chuyên khoa tâm thần với 12 năm kinh nghiệm điều trị nghiện chất. Ông đã tham gia nhiều chương trình cộng đồng và nghiên cứu về phòng chống ma túy.",
     expertise: ["Điều trị nghiện", "Rối loạn tâm thần", "Tư vấn cai nghiện", "Phục hồi chức năng"],
-    languages: ["Tiếng Việt", "Tiếng Anh", "Tiếng Pháp"],
+    languages: [
+      { language: "vi", proficiency: "native" },
+      { language: "en", proficiency: "advanced" },
+      { language: "fr", proficiency: "intermediate" }
+    ],
+    clientTypes: ["individual", "group", "adults"],
     availability: {
-      monday: { available: true, timeSlots: ["09:00", "10:00", "11:00", "15:00", "16:00"] },
-      tuesday: { available: true, timeSlots: ["09:00", "10:00", "11:00", "15:00", "16:00"] },
+      monday: { available: true, timeSlots: [
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "11:00", end: "12:00" },
+        { start: "15:00", end: "16:00" },
+        { start: "16:00", end: "17:00" }
+      ]},
+      tuesday: { available: true, timeSlots: [
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "11:00", end: "12:00" },
+        { start: "15:00", end: "16:00" },
+        { start: "16:00", end: "17:00" }
+      ]},
       wednesday: { available: false, timeSlots: [] },
-      thursday: { available: true, timeSlots: ["09:00", "10:00", "11:00", "15:00", "16:00"] },
-      friday: { available: true, timeSlots: ["09:00", "10:00", "11:00", "15:00", "16:00"] },
-      saturday: { available: true, timeSlots: ["09:00", "10:00", "11:00"] },
+      thursday: { available: true, timeSlots: [
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "11:00", end: "12:00" },
+        { start: "15:00", end: "16:00" },
+        { start: "16:00", end: "17:00" }
+      ]},
+      friday: { available: true, timeSlots: [
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "11:00", end: "12:00" },
+        { start: "15:00", end: "16:00" },
+        { start: "16:00", end: "17:00" }
+      ]},
+      saturday: { available: true, timeSlots: [
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "11:00", end: "12:00" }
+      ]},
       sunday: { available: false, timeSlots: [] }
     },
-    consultationTypes: ["online", "in-person"],
+    sessionTypes: [
+      { type: "individual", duration: 60, price: 800000 },
+      { type: "group", duration: 90, price: 1200000 }
+    ],
     fees: {
       online: 600000,
       inPerson: 800000
@@ -762,7 +839,7 @@ const counselorData = [
     phone: "0909876543",
     role: "consultant",
     ageGroup: "other",
-    specialization: "Tư vấn gia đình",
+    specializations: ["family_therapy", "youth_counseling", "prevention_education", "motivational_interviewing"],
     experience: 6,
     education: [
       {
@@ -786,17 +863,66 @@ const counselorData = [
     ],
     bio: "Thạc sĩ Mai chuyên về tư vấn gia đình và hỗ trợ thanh thiếu niên. Cô có kinh nghiệm làm việc với các gia đình có con em gặp vấn đề về ma túy và rối loạn hành vi.",
     expertise: ["Tư vấn gia đình", "Tâm lý thanh thiếu niên", "Kỹ năng sống", "Phòng ngừa nghiện"],
-    languages: ["Tiếng Việt", "Tiếng Anh"],
+    languages: [
+      { language: "vi", proficiency: "native" },
+      { language: "en", proficiency: "intermediate" }
+    ],
+    clientTypes: ["family", "children", "adolescents"],
     availability: {
-      monday: { available: true, timeSlots: ["07:00", "08:00", "18:00", "19:00", "20:00"] },
-      tuesday: { available: true, timeSlots: ["07:00", "08:00", "18:00", "19:00", "20:00"] },
-      wednesday: { available: true, timeSlots: ["07:00", "08:00", "18:00", "19:00", "20:00"] },
-      thursday: { available: true, timeSlots: ["07:00", "08:00", "18:00", "19:00", "20:00"] },
-      friday: { available: true, timeSlots: ["07:00", "08:00", "18:00", "19:00", "20:00"] },
-      saturday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] },
-      sunday: { available: true, timeSlots: ["08:00", "09:00", "10:00", "14:00", "15:00"] }
+      monday: { available: true, timeSlots: [
+        { start: "07:00", end: "08:00" },
+        { start: "08:00", end: "09:00" },
+        { start: "18:00", end: "19:00" },
+        { start: "19:00", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]},
+      tuesday: { available: true, timeSlots: [
+        { start: "07:00", end: "08:00" },
+        { start: "08:00", end: "09:00" },
+        { start: "18:00", end: "19:00" },
+        { start: "19:00", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]},
+      wednesday: { available: true, timeSlots: [
+        { start: "07:00", end: "08:00" },
+        { start: "08:00", end: "09:00" },
+        { start: "18:00", end: "19:00" },
+        { start: "19:00", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]},
+      thursday: { available: true, timeSlots: [
+        { start: "07:00", end: "08:00" },
+        { start: "08:00", end: "09:00" },
+        { start: "18:00", end: "19:00" },
+        { start: "19:00", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]},
+      friday: { available: true, timeSlots: [
+        { start: "07:00", end: "08:00" },
+        { start: "08:00", end: "09:00" },
+        { start: "18:00", end: "19:00" },
+        { start: "19:00", end: "20:00" },
+        { start: "20:00", end: "21:00" }
+      ]},
+      saturday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]},
+      sunday: { available: true, timeSlots: [
+        { start: "08:00", end: "09:00" },
+        { start: "09:00", end: "10:00" },
+        { start: "10:00", end: "11:00" },
+        { start: "14:00", end: "15:00" },
+        { start: "15:00", end: "16:00" }
+      ]}
     },
-    consultationTypes: ["online", "in-person"],
+    sessionTypes: [
+      { type: "family", duration: 90, price: 600000 },
+      { type: "individual", duration: 60, price: 600000 }
+    ],
     fees: {
       online: 400000,
       inPerson: 600000
@@ -942,90 +1068,84 @@ const seedCounselors = async () => {
           expiryDate: cert.expiryDate,
           isActive: true
         }))),
-        specializations: ["addiction_counseling"],
+        specializations: counselorInfo.specializations,
         experience: {
-          totalYears: counselorInfo.experience
+          totalYears: counselorInfo.experience,
+          workHistory: [
+            {
+              organization: "Trung tâm Tư vấn Tâm lý",
+              position: "Chuyên viên tư vấn",
+              startDate: new Date(new Date().getFullYear() - counselorInfo.experience, 0, 1),
+              isCurrent: true,
+              description: "Tư vấn và hỗ trợ người nghiện ma túy"
+            }
+          ]
         },
         biography: counselorInfo.bio,
         areasOfExpertise: counselorInfo.expertise,
-        languages: counselorInfo.languages.map(lang => ({
-          language: lang === "Tiếng Việt" ? "vi" : lang === "Tiếng Anh" ? "en" : lang === "Tiếng Pháp" ? "fr" : "en",
-          proficiency: "advanced"
-        })),
+        languages: counselorInfo.languages,
+        clientTypes: counselorInfo.clientTypes,
         availability: {
           workingHours: {
             monday: {
               isAvailable: counselorInfo.availability.monday.available,
-              slots: counselorInfo.availability.monday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.monday.timeSlots
             },
             tuesday: {
               isAvailable: counselorInfo.availability.tuesday.available,
-              slots: counselorInfo.availability.tuesday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.tuesday.timeSlots
             },
             wednesday: {
               isAvailable: counselorInfo.availability.wednesday.available,
-              slots: counselorInfo.availability.wednesday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.wednesday.timeSlots
             },
             thursday: {
               isAvailable: counselorInfo.availability.thursday.available,
-              slots: counselorInfo.availability.thursday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.thursday.timeSlots
             },
             friday: {
               isAvailable: counselorInfo.availability.friday.available,
-              slots: counselorInfo.availability.friday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.friday.timeSlots
             },
             saturday: {
               isAvailable: counselorInfo.availability.saturday.available,
-              slots: counselorInfo.availability.saturday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.saturday.timeSlots
             },
             sunday: {
               isAvailable: counselorInfo.availability.sunday.available,
-              slots: counselorInfo.availability.sunday.timeSlots.map(time => ({
-                start: time,
-                end: `${parseInt(time.split(':')[0]) + 1}:${time.split(':')[1]}`
-              }))
+              slots: counselorInfo.availability.sunday.timeSlots
             }
           }
         },
-        consultationTypes: counselorInfo.consultationTypes,
-        pricing: {
-          hourlyRate: counselorInfo.fees.inPerson,
-          onlineRate: counselorInfo.fees.online,
-          currency: "VND"
+        sessionSettings: {
+          sessionTypes: counselorInfo.sessionTypes.map(st => ({
+            type: st.type,
+            duration: st.duration,
+            price: st.price,
+            isActive: true
+          })),
+          defaultDuration: 60,
+          breakBetweenSessions: 15,
+          maxAppointmentsPerDay: 8,
+          advanceBookingDays: 30
         },
-        location: {
-          address: counselorInfo.officeAddress,
-          isOnlineOnly: false
-        },
-        verification: {
-          isVerified: counselorInfo.isVerified,
-          verifiedAt: new Date(),
-          verifiedBy: "system"
-        },
-        statistics: {
+        performance: {
           totalSessions: counselorInfo.totalConsultations,
           averageRating: counselorInfo.rating,
+          totalReviews: Math.floor(counselorInfo.totalConsultations * 0.7),
           completionRate: 95
         },
-        isActive: counselorInfo.isActive
+        verificationStatus: {
+          isVerified: counselorInfo.isVerified,
+          verifiedAt: new Date()
+        },
+        status: counselorInfo.isActive ? "active" : "inactive",
+        settings: {
+          isPublicProfile: true,
+          allowOnlineConsultations: true,
+          autoConfirmAppointments: false,
+          sendReminders: true
+        }
       };
       
       await Counselor.create(counselorProfile);
