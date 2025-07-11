@@ -4,6 +4,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
+const session = require("express-session");
+const passport = require("./config/passport");
 
 // Import routes
 const authRoutes = require("./routes/auth");
@@ -19,7 +21,7 @@ const blogRoutes = require("./routes/blogs");
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet());
@@ -35,6 +37,33 @@ app.use(
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Session middleware (required for Passport)
+app.use(
+  session({
+    secret:
+      process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // true in production with HTTPS
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Debug middleware for development
+if (process.env.NODE_ENV === "development") {
+  app.use((req, res, next) => {
+    console.log("Session ID:", req.sessionID);
+    console.log("User:", req.user?.email || "Not authenticated");
+    next();
+  });
+}
 
 // Logging middleware
 app.use(morgan("combined"));

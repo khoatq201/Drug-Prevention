@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 const Course = require("../models/Course");
+const Lesson = require("../models/Lesson");
+const UserProgress = require("../models/UserProgress");
 const User = require("../models/User");
 const { auth, authorize } = require("../middleware/auth");
 
@@ -51,7 +53,7 @@ router.get("/", async (req, res) => {
     const skip = (page - 1) * limit;
 
     const courses = await Course.find(query)
-      .select("-modules.lessons.content -modules.quiz")
+      .select("-modules.quiz")
       .sort(sort)
       .limit(parseInt(limit))
       .skip(skip);
@@ -88,12 +90,12 @@ router.get("/", async (req, res) => {
 router.get("/categories", async (req, res) => {
   try {
     const { ageGroup } = req.query;
-    
+
     let matchConditions = {
       isPublished: true,
       "enrollment.isOpen": true,
     };
-    
+
     if (ageGroup) {
       matchConditions.targetAgeGroup = ageGroup;
     } else if (req.user && req.user.ageGroup) {
@@ -181,7 +183,8 @@ router.get("/search", async (req, res) => {
         { title: { $regex: q, $options: "i" } },
         { description: { $regex: q, $options: "i" } },
         { tags: { $in: [new RegExp(q, "i")] } },
-        { "instructors.name": { $regex: q, $options: "i" } },
+        { "instructors.firstName": { $regex: q, $options: "i" } },
+        { "instructors.lastName": { $regex: q, $options: "i" } },
       ];
     }
 
@@ -198,7 +201,6 @@ router.get("/search", async (req, res) => {
       query.duration = { ...query.duration, $lte: parseFloat(maxDuration) };
     }
     if (isFree === "true") query["pricing.isFree"] = true;
-    if (hasVideo === "true") query["modules.lessons.type"] = "video";
     if (hasCertificate === "true") query["certificate.isAvailable"] = true;
 
     // Sorting
@@ -226,7 +228,7 @@ router.get("/search", async (req, res) => {
     const skip = (page - 1) * limit;
 
     const courses = await Course.find(query)
-      .select("-modules.lessons.content -modules.quiz")
+      .select("-modules.quiz")
       .sort(sortOptions)
       .limit(parseInt(limit))
       .skip(skip);
@@ -277,7 +279,7 @@ router.get("/:id/enrollment", auth, async (req, res) => {
     const enrollment = req.user.courseHistory.find(
       (enroll) => enroll.courseId.toString() === courseId
     );
-    if (!enrollment) {
+    if (!userProgress) {
       return res.status(404).json({
         success: false,
         message: "Bạn chưa đăng ký khóa học này",
@@ -326,9 +328,18 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // Hide detailed lesson content for non-enrolled users
+    // Get lessons for this course
+    const lessons = await Lesson.find({
+      courseId: course._id,
+      isPublished: true,
+    })
+      .sort({ order: 1 })
+      .select("-content -instructorNotes");
+
     let courseData = course.toObject();
-    
+    courseData.lessons = lessons;
+
+    let userProgress = null;
     if (!req.user) {
       // For non-authenticated users, only show basic info
       courseData.modules = courseData.modules.map(module => ({
@@ -346,9 +357,10 @@ router.get("/:id", async (req, res) => {
         quiz: undefined,
       }));
     } else {
-      // Check if user is enrolled
-      const userEnrolled = req.user.courseHistory.some(
-        (enrollment) => enrollment.courseId.toString() === course._id.toString()
+      // Get user progress
+      userProgress = await UserProgress.findByUserAndCourse(
+        req.user._id,
+        course._id
       );
       
       if (!userEnrolled) {
@@ -374,11 +386,16 @@ router.get("/:id", async (req, res) => {
       success: true,
       data: courseData,
       canEnroll: course.canEnroll(),
-      userEnrolled: req.user 
-        ? req.user.courseHistory.some(
-            (enrollment) => enrollment.courseId.toString() === course._id.toString()
-          )
-        : false,
+      userEnrolled: !!userProgress,
+      userProgress: userProgress
+        ? {
+            progress: userProgress.overallProgress,
+            status: userProgress.status,
+            currentLesson: userProgress.currentLesson,
+            completedLessons: userProgress.completedLessons.length,
+            totalLessons: lessons.length,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Get course error:", error);
@@ -388,7 +405,6 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-
 
 // Enroll in course
 router.post("/:id/enroll", auth, async (req, res) => {
@@ -419,27 +435,26 @@ router.post("/:id/enroll", auth, async (req, res) => {
     }
 
     // Check if user is already enrolled
-    const alreadyEnrolled = req.user.courseHistory.some(
-      (enrollment) => enrollment.courseId.toString() === course._id.toString()
+    const existingProgress = await UserProgress.findByUserAndCourse(
+      req.user._id,
+      course._id
     );
 
-    if (alreadyEnrolled) {
+    if (existingProgress) {
       return res.status(400).json({
         success: false,
         message: "Bạn đã đăng ký khóa học này rồi",
       });
     }
 
-    // Enroll user
-    await User.findByIdAndUpdate(req.user._id, {
-      $push: {
-        courseHistory: {
-          courseId: course._id,
-          enrolledAt: new Date(),
-          progress: 0,
-        },
-      },
+    // Create user progress record
+    const userProgress = new UserProgress({
+      userId: req.user._id,
+      courseId: course._id,
+      status: "enrolled",
     });
+
+    await userProgress.save();
 
     // Update course enrollment count
     await Course.findByIdAndUpdate(course._id, {
@@ -449,6 +464,7 @@ router.post("/:id/enroll", auth, async (req, res) => {
     res.json({
       success: true,
       message: "Đăng ký khóa học thành công",
+      data: userProgress,
     });
   } catch (error) {
     console.error("Enroll course error:", error);
@@ -512,9 +528,8 @@ router.put("/:id/progress", auth, async (req, res) => {
 });
 
 // Get user's enrolled courses
-router.get("/user/:userId/enrolled", auth, async (req, res) => {
+router.get("/my-courses", auth, async (req, res) => {
   try {
-    const { userId } = req.params;
     const { status = "all", page = 1, limit = 10 } = req.query;
     // Check if user can access this information
     if (req.user._id.toString() !== userId && !req.user.hasPermission("staff")) {
@@ -542,7 +557,7 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
     console.log("courseHistory after filtering null courseId:", JSON.stringify(courseHistory, null, 2));
     // Filter by status
     if (status === "completed") {
-      courseHistory = courseHistory.filter(course => course.completedAt);
+      query.status = "completed";
     } else if (status === "in_progress") {
       courseHistory = courseHistory.filter(course => !course.completedAt && (course.progress?.percent > 0));
     } else if (status === "not_started") {
@@ -561,9 +576,9 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
       data,
       pagination: {
         current: parseInt(page),
-        total: Math.ceil(courseHistory.length / limit),
-        count: paginatedCourses.length,
-        totalResults: courseHistory.length,
+        total: Math.ceil(total / limit),
+        count: enrollments.length,
+        totalResults: total,
       },
     });
   } catch (error) {
@@ -581,6 +596,7 @@ router.post("/", auth, authorize("admin"), async (req, res) => {
   try {
     const course = new Course({
       ...req.body,
+      createdBy: req.user._id,
       publishedAt: req.body.isPublished ? new Date() : undefined,
     });
 
@@ -605,16 +621,16 @@ router.post("/", auth, authorize("admin"), async (req, res) => {
 router.put("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const updateData = { ...req.body };
-    
+    updateData.lastModifiedBy = req.user._id;
+
     if (req.body.isPublished && !req.body.publishedAt) {
       updateData.publishedAt = new Date();
     }
 
-    const course = await Course.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const course = await Course.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!course) {
       return res.status(404).json({
@@ -673,7 +689,7 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const { category, ageGroup, startDate, endDate } = req.query;
 
     let matchConditions = { isPublished: true };
-    
+
     if (category) matchConditions.category = category;
     if (ageGroup) matchConditions.targetAgeGroup = ageGroup;
     if (startDate && endDate) {
@@ -709,7 +725,9 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const totalCourses = await Course.countDocuments(matchConditions);
     const totalEnrollments = await Course.aggregate([
       { $match: matchConditions },
-      { $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } } },
+      {
+        $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } },
+      },
     ]);
 
     res.json({

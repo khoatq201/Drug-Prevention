@@ -96,9 +96,15 @@ export const AuthProvider = ({ children }) => {
     // Request interceptor to add token
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
-        if (state.token) {
-          config.headers.Authorization = `Bearer ${state.token}`;
+        // Use token from localStorage or state
+        const token = state.token || localStorage.getItem("token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
         }
+        console.log(
+          "🔍 Axios request with token:",
+          token ? "exists" : "missing"
+        );
         return config;
       },
       (error) => {
@@ -116,10 +122,12 @@ export const AuthProvider = ({ children }) => {
           originalRequest._retry = true;
 
           try {
-            if (state.refreshToken) {
+            const refreshToken =
+              state.refreshToken || localStorage.getItem("refreshToken");
+            if (refreshToken) {
               const response = await axios.post(
                 `${API_BASE_URL}/auth/refresh-token`,
-                { refreshToken: state.refreshToken }
+                { refreshToken }
               );
 
               const { token, refreshToken } = response.data;
@@ -160,6 +168,12 @@ export const AuthProvider = ({ children }) => {
   // Check if user is logged in on app start
   useEffect(() => {
     const checkAuth = async () => {
+      // Skip auth check if we're on Google OAuth success page
+      if (window.location.pathname === "/auth/google/success") {
+        console.log("🔍 Skipping auth check on Google success page");
+        return;
+      }
+
       const token = localStorage.getItem("token");
       if (token) {
         try {
@@ -174,9 +188,12 @@ export const AuthProvider = ({ children }) => {
             },
           });
         } catch (error) {
+          console.error("Auth check failed:", error);
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
           dispatch({ type: "LOGOUT" });
+        } finally {
+          dispatch({ type: "SET_LOADING", payload: false });
         }
       }
     };
@@ -204,6 +221,8 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token, refreshToken },
       });
 
+      // Set flag to show welcome toast
+      sessionStorage.setItem("justLoggedIn", "true");
       toast.success("Đăng nhập thành công!");
       return { success: true };
     } catch (error) {
@@ -259,12 +278,48 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = (userData) => {
+    try {
+      const { user, token, refreshToken } = userData;
+      console.log("🔍 loginWithGoogle called with:", {
+        user,
+        tokenExists: !!token,
+        refreshTokenExists: !!refreshToken,
+      });
+
+      // Store tokens in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("refreshToken", refreshToken);
+
+      // Dispatch login success
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: {
+          user,
+          token,
+          refreshToken,
+        },
+      });
+
+      console.log("✅ loginWithGoogle dispatch completed");
+      toast.success("Đăng nhập Google thành công!");
+      return { success: true };
+    } catch (error) {
+      console.error("❌ loginWithGoogle error:", error);
+      const message = "Đăng nhập Google thất bại";
+      toast.error(message);
+      return { success: false, message };
+    }
+  };
+
   const value = {
     ...state,
     login,
     register,
     logout,
     updateProfile,
+    loginWithGoogle, // Add Google login method
+    dispatch, // Export dispatch for direct state management
     api, // Export api instance for use in other components
   };
 
