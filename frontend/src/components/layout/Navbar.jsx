@@ -26,19 +26,38 @@ const Navbar = () => {
     return location.pathname === path;
   };
 
-  const navigationItems = [
-    { name: "Trang chủ", href: "/" },
-    { name: "Khóa học", href: "/courses" },
-    { name: "Đánh giá", href: "/assessments" },
-    { name: "Blog", href: "/blog" },
-    ...(isAuthenticated
-      ? [{ name: "Đặt lịch hẹn", href: "/appointments" }]
-      : []),
-  ];
+  // Role-based navigation items
+  const getNavigationItems = () => {
+    const baseItems = [
+      { name: "Trang chủ", href: "/" },
+      { name: "Khóa học", href: "/courses" },
+      { name: "Đánh giá", href: "/assessments" },
+      { name: "Blog", href: "/blog" },
+    ];
+
+    if (!isAuthenticated) return baseItems;
+
+    // Add items for authenticated users
+    const authenticatedItems = [
+      ...baseItems,
+      { name: "Đặt lịch hẹn", href: "/appointments" },
+    ];
+
+    // Add admin items for staff and above
+    if (user && (user.role === 'staff' || user.role === 'consultant' || user.role === 'manager' || user.role === 'admin')) {
+      authenticatedItems.push(
+        { name: "Quản lý", href: "/admin", role: "staff" }
+      );
+    }
+
+    return authenticatedItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <motion.nav
-      className="navbar"
+      className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -92,7 +111,10 @@ const Navbar = () => {
                 >
                   <UserCircleIcon className="w-6 h-6" />
                   <span className="text-sm font-medium">
-                    {user?.fullName || "Tài khoản"}
+                    {user?.firstName && user?.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user?.firstName || "Tài khoản"
+                    }
                   </span>
                   <ChevronDownIcon className="w-4 h-4" />
                 </button>
@@ -130,7 +152,10 @@ const Navbar = () => {
                 >
                   Đăng nhập
                 </Link>
-                <Link to="/register" className="btn-primary">
+                <Link 
+                  to="/register" 
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
                   Đăng ký
                 </Link>
               </div>
@@ -222,7 +247,10 @@ const Navbar = () => {
                       <UserCircleIcon className="w-8 h-8 text-gray-400" />
                       <div className="ml-3">
                         <div className="text-base font-medium text-gray-800">
-                          {user?.fullName || "Tài khoản"}
+                          {user?.firstName && user?.lastName 
+                            ? `${user.firstName} ${user.lastName}`
+                            : user?.firstName || "Tài khoản"
+                          }
                         </div>
                         <div className="text-sm text-gray-500">
                           {user?.email}

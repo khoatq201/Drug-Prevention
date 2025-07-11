@@ -66,10 +66,34 @@ const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Check if user has any of the required roles using hierarchy
+    const hasPermission = roles.some(role => req.user.hasPermission(role));
+    
+    if (!hasPermission) {
       return res.status(403).json({
         success: false,
         message: "Không có quyền truy cập",
+      });
+    }
+
+    next();
+  };
+};
+
+// Middleware kiểm tra quyền truy cập tài nguyên cụ thể
+const authorizeResource = (resource) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Vui lòng đăng nhập để truy cập",
+      });
+    }
+
+    if (!req.user.canAccess(resource)) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền truy cập tài nguyên này",
       });
     }
 
@@ -114,6 +138,7 @@ const requireEmailVerification = (req, res, next) => {
 module.exports = {
   auth,
   authorize,
+  authorizeResource,
   authorizeOwnerOrAdmin,
   requireEmailVerification,
 };
