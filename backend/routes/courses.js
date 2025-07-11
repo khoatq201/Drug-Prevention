@@ -89,12 +89,12 @@ router.get("/", async (req, res) => {
 router.get("/categories", async (req, res) => {
   try {
     const { ageGroup } = req.query;
-    
+
     let matchConditions = {
       isPublished: true,
       "enrollment.isOpen": true,
     };
-    
+
     if (ageGroup) {
       matchConditions.targetAgeGroup = ageGroup;
     } else if (req.user && req.user.ageGroup) {
@@ -267,11 +267,11 @@ router.get("/search", async (req, res) => {
 // Get course enrollment details
 router.get("/:id/enrollment", auth, async (req, res) => {
   try {
-    const courseId = req.params.id;
-    const enrollment = req.user.courseHistory.find(
-      (enroll) => enroll.courseId.equals(mongoose.Types.ObjectId(courseId))
+    const userProgress = await UserProgress.findByUserAndCourse(
+      req.user._id,
+      req.params.id
     );
-    if (!enrollment) {
+    if (!userProgress) {
       return res.status(404).json({
         success: false,
         message: "Bạn chưa đăng ký khóa học này",
@@ -279,7 +279,7 @@ router.get("/:id/enrollment", auth, async (req, res) => {
     }
     res.json({
       success: true,
-      data: enrollment,
+      data: userProgress,
     });
   } catch (error) {
     console.error("Get enrollment error:", error);
@@ -318,35 +318,42 @@ router.get("/:id", async (req, res) => {
     }
 
     // Get lessons for this course
-    const lessons = await Lesson.find({ 
-      courseId: course._id, 
-      isPublished: true 
-    }).sort({ order: 1 }).select("-content -instructorNotes");
-    
+    const lessons = await Lesson.find({
+      courseId: course._id,
+      isPublished: true,
+    })
+      .sort({ order: 1 })
+      .select("-content -instructorNotes");
+
     let courseData = course.toObject();
     courseData.lessons = lessons;
-    
+
     let userProgress = null;
     if (!req.user) {
       // For non-authenticated users, only show preview lessons
-      courseData.lessons = lessons.filter(lesson => lesson.isPreview);
+      courseData.lessons = lessons.filter((lesson) => lesson.isPreview);
     } else {
       // Get user progress
-      userProgress = await UserProgress.findByUserAndCourse(req.user._id, course._id);
-      
+      userProgress = await UserProgress.findByUserAndCourse(
+        req.user._id,
+        course._id
+      );
+
       if (userProgress) {
         // User is enrolled, show all lessons with accessibility info
-        courseData.lessons = lessons.map(lesson => {
+        courseData.lessons = lessons.map((lesson) => {
           const lessonObj = lesson.toObject();
           lessonObj.isAccessible = lesson.isAccessibleForUser(userProgress);
-          lessonObj.isCompleted = userProgress.completedLessons?.some(
-            completed => completed.lessonId.toString() === lesson._id.toString()
-          ) || false;
+          lessonObj.isCompleted =
+            userProgress.completedLessons?.some(
+              (completed) =>
+                completed.lessonId.toString() === lesson._id.toString()
+            ) || false;
           return lessonObj;
         });
       } else {
         // User not enrolled, show only preview lessons
-        courseData.lessons = lessons.filter(lesson => lesson.isPreview);
+        courseData.lessons = lessons.filter((lesson) => lesson.isPreview);
       }
     }
 
@@ -355,13 +362,15 @@ router.get("/:id", async (req, res) => {
       data: courseData,
       canEnroll: course.canEnroll(),
       userEnrolled: !!userProgress,
-      userProgress: userProgress ? {
-        progress: userProgress.overallProgress,
-        status: userProgress.status,
-        currentLesson: userProgress.currentLesson,
-        completedLessons: userProgress.completedLessons.length,
-        totalLessons: lessons.length,
-      } : null,
+      userProgress: userProgress
+        ? {
+            progress: userProgress.overallProgress,
+            status: userProgress.status,
+            currentLesson: userProgress.currentLesson,
+            completedLessons: userProgress.completedLessons.length,
+            totalLessons: lessons.length,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Get course error:", error);
@@ -371,7 +380,6 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-
 
 // Enroll in course
 router.post("/:id/enroll", auth, async (req, res) => {
@@ -402,7 +410,10 @@ router.post("/:id/enroll", auth, async (req, res) => {
     }
 
     // Check if user is already enrolled
-    const existingProgress = await UserProgress.findByUserAndCourse(req.user._id, course._id);
+    const existingProgress = await UserProgress.findByUserAndCourse(
+      req.user._id,
+      course._id
+    );
 
     if (existingProgress) {
       return res.status(400).json({
@@ -417,7 +428,7 @@ router.post("/:id/enroll", auth, async (req, res) => {
       courseId: course._id,
       status: "enrolled",
     });
-    
+
     await userProgress.save();
 
     // Update course enrollment count
@@ -439,23 +450,26 @@ router.post("/:id/enroll", auth, async (req, res) => {
   }
 });
 
-// Get user's enrollment status
-router.get("/:id/enrollment", auth, async (req, res) => {
-  try {
-    const userProgress = await UserProgress.findByUserAndCourse(req.user._id, req.params.id);
+// // Get user's enrollment status
+// router.get("/:id/enrollment", auth, async (req, res) => {
+//   try {
+//     const userProgress = await UserProgress.findByUserAndCourse(
+//       req.user._id,
+//       req.params.id
+//     );
 
-    res.json({
-      success: true,
-      data: userProgress,
-    });
-  } catch (error) {
-    console.error("Get enrollment error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi lấy thông tin đăng ký",
-    });
-  }
-});
+//     res.json({
+//       success: true,
+//       data: userProgress,
+//     });
+//   } catch (error) {
+//     console.error("Get enrollment error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Lỗi khi lấy thông tin đăng ký",
+//     });
+//   }
+// });
 
 // Get user's enrolled courses
 router.get("/my-courses", auth, async (req, res) => {
@@ -475,13 +489,16 @@ router.get("/my-courses", auth, async (req, res) => {
 
     // Pagination
     const skip = (page - 1) * limit;
-    
+
     const enrollments = await UserProgress.find(query)
-      .populate("courseId", "title description thumbnail category level duration ratings")
+      .populate(
+        "courseId",
+        "title description thumbnail category level duration ratings"
+      )
       .sort({ lastAccessedAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
-    
+
     const total = await UserProgress.countDocuments(query);
 
     res.json({
@@ -534,16 +551,15 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const updateData = { ...req.body };
     updateData.lastModifiedBy = req.user._id;
-    
+
     if (req.body.isPublished && !req.body.publishedAt) {
       updateData.publishedAt = new Date();
     }
 
-    const course = await Course.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const course = await Course.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!course) {
       return res.status(404).json({
@@ -602,7 +618,7 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const { category, ageGroup, startDate, endDate } = req.query;
 
     let matchConditions = { isPublished: true };
-    
+
     if (category) matchConditions.category = category;
     if (ageGroup) matchConditions.targetAgeGroup = ageGroup;
     if (startDate && endDate) {
@@ -638,7 +654,9 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const totalCourses = await Course.countDocuments(matchConditions);
     const totalEnrollments = await Course.aggregate([
       { $match: matchConditions },
-      { $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } } },
+      {
+        $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } },
+      },
     ]);
 
     res.json({

@@ -165,7 +165,13 @@ const userProgressSchema = new mongoose.Schema(
       {
         type: {
           type: String,
-          enum: ["first_lesson", "week_streak", "month_streak", "course_completed", "quiz_master"],
+          enum: [
+            "first_lesson",
+            "week_streak",
+            "month_streak",
+            "course_completed",
+            "quiz_master",
+          ],
         },
         earnedAt: {
           type: Date,
@@ -199,9 +205,12 @@ userProgressSchema.virtual("nextLesson").get(function () {
 });
 
 // Method to mark lesson as completed
-userProgressSchema.methods.completeLesson = async function (lessonId, data = {}) {
+userProgressSchema.methods.completeLesson = async function (
+  lessonId,
+  data = {}
+) {
   const existingCompletion = this.completedLessons.find(
-    completion => completion.lessonId.toString() === lessonId.toString()
+    (completion) => completion.lessonId.toString() === lessonId.toString()
   );
 
   if (existingCompletion) {
@@ -222,29 +231,33 @@ userProgressSchema.methods.completeLesson = async function (lessonId, data = {})
 
   this.totalTimeSpent += data.timeSpent || 0;
   this.lastAccessedAt = new Date();
-  
+
   // Update learning streak
   this.updateLearningStreak();
-  
+
   return this.save();
 };
 
 // Method to update current lesson
-userProgressSchema.methods.updateCurrentLesson = async function (lessonId, position = 0) {
+userProgressSchema.methods.updateCurrentLesson = async function (
+  lessonId,
+  position = 0
+) {
   this.currentLesson = {
     lessonId,
-    startedAt: this.currentLesson?.lessonId?.toString() === lessonId.toString() 
-      ? this.currentLesson.startedAt 
-      : new Date(),
+    startedAt:
+      this.currentLesson?.lessonId?.toString() === lessonId.toString()
+        ? this.currentLesson.startedAt
+        : new Date(),
     lastPosition: position,
   };
-  
+
   this.lastAccessedAt = new Date();
-  
+
   if (this.status === "enrolled") {
     this.status = "in_progress";
   }
-  
+
   return this.save();
 };
 
@@ -254,22 +267,22 @@ userProgressSchema.methods.updateProgress = async function (totalLessons) {
     this.overallProgress = 0;
     return this.save();
   }
-  
+
   const completedCount = this.completedLessons.length;
   this.overallProgress = Math.round((completedCount / totalLessons) * 100);
-  
+
   // Check if course is completed
   if (this.overallProgress >= 100 && this.status !== "completed") {
     this.status = "completed";
     this.completedAt = new Date();
-    
+
     // Award completion achievement
     this.achievements.push({
       type: "course_completed",
       metadata: { courseId: this.courseId },
     });
   }
-  
+
   return this.save();
 };
 
@@ -277,9 +290,9 @@ userProgressSchema.methods.updateProgress = async function (totalLessons) {
 userProgressSchema.methods.updateLearningStreak = function () {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const lastStudy = this.learningStreak.lastStudyDate;
-  
+
   if (!lastStudy) {
     // First time studying
     this.learningStreak.current = 1;
@@ -288,9 +301,11 @@ userProgressSchema.methods.updateLearningStreak = function () {
   } else {
     const lastStudyDate = new Date(lastStudy);
     lastStudyDate.setHours(0, 0, 0, 0);
-    
-    const daysDiff = Math.floor((today - lastStudyDate) / (1000 * 60 * 60 * 24));
-    
+
+    const daysDiff = Math.floor(
+      (today - lastStudyDate) / (1000 * 60 * 60 * 24)
+    );
+
     if (daysDiff === 1) {
       // Consecutive day
       this.learningStreak.current += 1;
@@ -299,7 +314,7 @@ userProgressSchema.methods.updateLearningStreak = function () {
         this.learningStreak.current
       );
       this.learningStreak.lastStudyDate = today;
-      
+
       // Award streak achievements
       if (this.learningStreak.current === 7) {
         this.achievements.push({ type: "week_streak" });
@@ -316,27 +331,37 @@ userProgressSchema.methods.updateLearningStreak = function () {
 };
 
 // Method to add bookmark
-userProgressSchema.methods.addBookmark = async function (lessonId, timestamp, note) {
+userProgressSchema.methods.addBookmark = async function (
+  lessonId,
+  timestamp,
+  note
+) {
   this.bookmarks.push({
     lessonId,
     timestamp,
     note,
   });
-  
+
   return this.save();
 };
 
 // Method to remove bookmark
 userProgressSchema.methods.removeBookmark = async function (bookmarkId) {
   this.bookmarks = this.bookmarks.filter(
-    bookmark => bookmark._id.toString() !== bookmarkId.toString()
+    (bookmark) => bookmark._id.toString() !== bookmarkId.toString()
   );
-  
+
   return this.save();
 };
 
 // Static method to get user progress for course
 userProgressSchema.statics.findByUserAndCourse = function (userId, courseId) {
+  console.log(
+    "Finding user progress for userId:",
+    userId,
+    "and courseId:",
+    courseId
+  );
   return this.findOne({ userId, courseId })
     .populate("completedLessons.lessonId", "title type duration")
     .populate("currentLesson.lessonId", "title type duration")
@@ -346,7 +371,7 @@ userProgressSchema.statics.findByUserAndCourse = function (userId, courseId) {
 // Static method to get user's enrolled courses
 userProgressSchema.statics.findByUser = function (userId, options = {}) {
   const query = { userId, ...options };
-  
+
   return this.find(query)
     .populate("courseId", "title description thumbnail level duration")
     .sort({ lastAccessedAt: -1 });
