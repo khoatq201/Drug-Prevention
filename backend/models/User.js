@@ -101,10 +101,15 @@ const userSchema = new mongoose.Schema(
         },
         completedAt: Date,
         progress: {
-          type: Number,
-          default: 0,
-          min: 0,
-          max: 100,
+          completedLessons: [{ type: mongoose.Schema.Types.ObjectId, ref: "Lesson" }],
+          lastLesson: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson" },
+          // Optionally, keep the old progress number for backward compatibility
+          percent: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100,
+          },
         },
         certificateUrl: String,
       },

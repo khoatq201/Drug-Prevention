@@ -248,7 +248,7 @@ const courseData = [
     duration: 240, // 4 hours
     price: 0,
     category: "drug_awareness",
-    targetAudience: ["student", "university_student", "parent", "teacher"],
+    targetAgeGroup: ["student", "university_student", "parent", "teacher"],
     isPublished: true,
     featured: true,
     enrollment: {
@@ -265,24 +265,34 @@ const courseData = [
         lessons: [
           {
             title: "Ma túy là gì?",
-            content: "Định nghĩa và khái niệm cơ bản về ma túy...",
+            content: "<h2>Định nghĩa</h2><p>Ma túy là các chất tự nhiên hoặc tổng hợp, khi đưa vào cơ thể sẽ ảnh hưởng đến hệ thần kinh trung ương và gây nghiện.</p>",
             type: "video",
             duration: 15,
-            order: 1
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: [
+              { title: "Tài liệu tham khảo về ma túy", url: "https://example.com/docs/drug-basics.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Phân loại ma túy",
-            content: "Các loại ma túy phổ biến và đặc điểm...",
+            content: "<h2>Phân loại ma túy</h2><ul><li>Ma túy tự nhiên</li><li>Ma túy tổng hợp</li><li>Ma túy bán tổng hợp</li></ul>",
             type: "text",
             duration: 20,
-            order: 2
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            resources: [
+              { title: "Bảng phân loại ma túy chi tiết", url: "https://example.com/docs/drug-classification.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Lịch sử và tình hình hiện tại",
-            content: "Tình hình sử dụng ma túy ở Việt Nam và thế giới...",
+            content: "<h2>Lịch sử và tình hình hiện tại</h2><p>Ma túy đã xuất hiện từ lâu đời và có nhiều biến động trong xã hội hiện đại.</p>",
             type: "video",
             duration: 25,
-            order: 3
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+            resources: []
           }
         ]
       },
@@ -294,24 +304,32 @@ const courseData = [
         lessons: [
           {
             title: "Tác hại đối với sức khỏe thể chất",
-            content: "Những ảnh hưởng của ma túy đến cơ thể...",
+            content: "<h2>Tác hại đối với sức khỏe thể chất</h2><p>Ma túy gây ra nhiều vấn đề về sức khỏe như suy giảm trí nhớ, rối loạn tâm thần, và các bệnh lý khác.</p>",
             type: "video",
             duration: 30,
-            order: 1
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+            resources: [
+              { title: "Nghiên cứu về tác hại của ma túy", url: "https://example.com/docs/drug-effects.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Tác hại đối với sức khỏe tâm thần",
-            content: "Rối loạn tâm lý do sử dụng ma túy...",
+            content: "<h2>Tác hại đối với sức khỏe tâm thần</h2><p>Người sử dụng ma túy có nguy cơ cao mắc các rối loạn tâm thần như trầm cảm, lo âu, hoang tưởng.</p>",
             type: "text",
             duration: 30,
-            order: 2
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: []
           },
           {
             title: "Tác động xã hội",
-            content: "Ảnh hưởng đến gia đình và cộng đồng...",
+            content: "<h2>Tác động xã hội</h2><p>Ma túy không chỉ ảnh hưởng đến cá nhân mà còn gây ra nhiều hệ lụy cho gia đình và xã hội.</p>",
             type: "video",
             duration: 30,
-            order: 3
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/movie.mp4",
+            resources: []
           }
         ]
       },
@@ -384,7 +402,7 @@ const courseData = [
     duration: 360, // 6 hours
     price: 0,
     category: "counseling",
-    targetAudience: ["parent", "teacher", "other"],
+    targetAgeGroup: ["parent", "teacher", "other"],
     isPublished: true,
     featured: true,
     enrollment: {
@@ -513,7 +531,7 @@ const courseData = [
     duration: 300, // 5 hours
     price: 0,
     category: "prevention_skills",
-    targetAudience: ["teacher"],
+    targetAgeGroup: ["teacher"],
     isPublished: true,
     featured: false,
     enrollment: {

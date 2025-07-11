@@ -18,6 +18,7 @@ import AppointmentBooking from "./pages/appointments/AppointmentBooking";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Lesson from "./pages/courses/Lesson";
 import "./App.css";
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
               <Route path="/appointments/book" element={<AppointmentBooking />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
 
               {/* 404 Page */}
               <Route path="*" element={<NotFound />} />

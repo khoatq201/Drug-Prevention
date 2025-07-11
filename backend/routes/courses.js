@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Course = require("../models/Course");
 const User = require("../models/User");
@@ -264,10 +265,17 @@ router.get("/search", async (req, res) => {
 
 // Get course enrollment details
 router.get("/:id/enrollment", auth, async (req, res) => {
+  console.log("Reached /:id/enrollment endpoint with courseId:", req.params.id);
   try {
     const courseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID khóa học không hợp lệ",
+      });
+    }
     const enrollment = req.user.courseHistory.find(
-      (enroll) => enroll.courseId.equals(mongoose.Types.ObjectId(courseId))
+      (enroll) => enroll.courseId.toString() === courseId
     );
     if (!enrollment) {
       return res.status(404).json({
@@ -275,9 +283,13 @@ router.get("/:id/enrollment", auth, async (req, res) => {
         message: "Bạn chưa đăng ký khóa học này",
       });
     }
+    // Return progress.completedLessons and percent
     res.json({
       success: true,
-      data: enrollment,
+      data: {
+        ...enrollment.toObject ? enrollment.toObject() : enrollment,
+        progress: enrollment.progress || { completedLessons: [], percent: 0 },
+      },
     });
   } catch (error) {
     console.error("Get enrollment error:", error);
@@ -287,7 +299,6 @@ router.get("/:id/enrollment", auth, async (req, res) => {
     });
   }
 });
-
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -323,10 +334,14 @@ router.get("/:id", async (req, res) => {
       courseData.modules = courseData.modules.map(module => ({
         ...module,
         lessons: module.lessons.map(lesson => ({
+          _id: lesson._id,
           title: lesson.title,
           type: lesson.type,
           duration: lesson.duration,
           order: lesson.order,
+          content: lesson.content,
+          videoUrl: lesson.videoUrl,
+          resources: lesson.resources,
         })),
         quiz: undefined,
       }));
@@ -341,8 +356,14 @@ router.get("/:id", async (req, res) => {
         courseData.modules = courseData.modules.map(module => ({
           ...module,
           lessons: module.lessons.map((lesson, index) => ({
-            ...lesson,
+            _id: lesson._id,
+            title: lesson.title,
+            type: lesson.type,
+            duration: lesson.duration,
+            order: lesson.order,
             content: index === 0 ? lesson.content : "Nội dung khóa học. Đăng ký để xem chi tiết.",
+            videoUrl: lesson.videoUrl,
+            resources: lesson.resources,
           })),
           quiz: undefined,
         }));
@@ -441,8 +462,7 @@ router.post("/:id/enroll", auth, async (req, res) => {
 // Update course progress
 router.put("/:id/progress", auth, async (req, res) => {
   try {
-    const { moduleIndex, lessonIndex, completed = false } = req.body;
-    
+    const { lessonId } = req.body;
     const course = await Course.findById(req.params.id);
     if (!course) {
       return res.status(404).json({
@@ -450,62 +470,37 @@ router.put("/:id/progress", auth, async (req, res) => {
         message: "Không tìm thấy khóa học",
       });
     }
-
     // Check if user is enrolled
     const enrollment = req.user.courseHistory.find(
       (enrollment) => enrollment.courseId.toString() === course._id.toString()
     );
-
     if (!enrollment) {
       return res.status(400).json({
         success: false,
         message: "Bạn chưa đăng ký khóa học này",
       });
     }
-
-    // Calculate progress
-    const totalLessons = course.totalLessons;
-    const currentProgress = enrollment.progress;
-    
-    // Simple progress calculation - in a real app, you'd track individual lesson progress
-    let newProgress = currentProgress;
-    if (completed && currentProgress < 100) {
-      newProgress = Math.min(100, currentProgress + (100 / totalLessons));
+    // Add lessonId to completedLessons if not already present
+    if (!enrollment.progress) enrollment.progress = { completedLessons: [], percent: 0 };
+    if (!enrollment.progress.completedLessons) enrollment.progress.completedLessons = [];
+    if (!enrollment.progress.completedLessons.includes(lessonId)) {
+      enrollment.progress.completedLessons.push(lessonId);
     }
-
-    // Update user's course progress
-    await User.findOneAndUpdate(
-      { 
-        _id: req.user._id, 
-        "courseHistory.courseId": course._id 
-      },
-      {
-        $set: {
-          "courseHistory.$.progress": newProgress,
-          "courseHistory.$.lastAccessedAt": new Date(),
-        },
-      }
-    );
-
-    // Check if course is completed
-    if (newProgress >= 100) {
-      await User.findOneAndUpdate(
-        { 
-          _id: req.user._id, 
-          "courseHistory.courseId": course._id 
-        },
-        {
-          $set: {
-            "courseHistory.$.completedAt": new Date(),
-          },
-        }
-      );
+    enrollment.progress.lastLesson = lessonId;
+    // Calculate percent progress
+    const totalLessons = course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+    const completedCount = enrollment.progress.completedLessons.length;
+    enrollment.progress.percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+    // Mark completedAt if all lessons done
+    if (completedCount === totalLessons && totalLessons > 0) {
+      enrollment.completedAt = new Date();
     }
-
+    // Save user
+    await req.user.save();
     res.json({
       success: true,
       message: "Tiến độ đã được cập nhật",
-      progress: newProgress,
+      progress: enrollment.progress,
     });
   } catch (error) {
     console.error("Update progress error:", error);
@@ -521,7 +516,6 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
   try {
     const { userId } = req.params;
     const { status = "all", page = 1, limit = 10 } = req.query;
-
     // Check if user can access this information
     if (req.user._id.toString() !== userId && !req.user.hasPermission("staff")) {
       return res.status(403).json({
@@ -529,37 +523,42 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
         message: "Không có quyền truy cập thông tin này",
       });
     }
-
+    console.log("Fetching enrolled courses for userId:", userId);
     const user = await User.findById(userId).populate({
       path: "courseHistory.courseId",
       select: "title description thumbnail category level duration ratings",
     });
-
     if (!user) {
+      console.error("User not found for userId:", userId);
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy người dùng",
       });
     }
-
     let courseHistory = user.courseHistory;
-
+    console.log("courseHistory after population:", JSON.stringify(courseHistory, null, 2));
+    // Filter out entries with missing courseId (e.g., deleted courses)
+    courseHistory = courseHistory.filter(entry => entry.courseId);
+    console.log("courseHistory after filtering null courseId:", JSON.stringify(courseHistory, null, 2));
     // Filter by status
     if (status === "completed") {
       courseHistory = courseHistory.filter(course => course.completedAt);
     } else if (status === "in_progress") {
-      courseHistory = courseHistory.filter(course => !course.completedAt && course.progress > 0);
+      courseHistory = courseHistory.filter(course => !course.completedAt && (course.progress?.percent > 0));
     } else if (status === "not_started") {
-      courseHistory = courseHistory.filter(course => course.progress === 0);
+      courseHistory = courseHistory.filter(course => (course.progress?.percent || 0) === 0);
     }
-
     // Pagination
     const skip = (page - 1) * limit;
     const paginatedCourses = courseHistory.slice(skip, skip + parseInt(limit));
-
+    // Return progress.completedLessons and percent for each course
+    const data = paginatedCourses.map(enrollment => ({
+      ...enrollment.toObject ? enrollment.toObject() : enrollment,
+      progress: enrollment.progress || { completedLessons: [], percent: 0 },
+    }));
     res.json({
       success: true,
-      data: paginatedCourses,
+      data,
       pagination: {
         current: parseInt(page),
         total: Math.ceil(courseHistory.length / limit),
@@ -568,10 +567,11 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get enrolled courses error:", error);
+    console.error("Get enrolled courses error:", error, error?.stack);
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy danh sách khóa học đã đăng ký",
+      error: error?.message,
     });
   }
 });

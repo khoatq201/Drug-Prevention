@@ -292,7 +292,7 @@ const Courses = () => {
 
                   <div className="flex items-center justify-between">
                     <div className="text-lg font-bold text-green-600">
-                      {course.price === 0 ? "Miễn phí" : `${course.price?.toLocaleString()}đ`}
+                      {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
                     </div>
                     <Link
                       to={`/courses/${course._id}`}
