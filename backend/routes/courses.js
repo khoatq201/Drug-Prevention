@@ -262,6 +262,32 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// Get course enrollment details
+router.get("/:id/enrollment", auth, async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const enrollment = req.user.courseHistory.find(
+      (enroll) => enroll.courseId.equals(mongoose.Types.ObjectId(courseId))
+    );
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Bạn chưa đăng ký khóa học này",
+      });
+    }
+    res.json({
+      success: true,
+      data: enrollment,
+    });
+  } catch (error) {
+    console.error("Get enrollment error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thông tin đăng ký khóa học",
+    });
+  }
+});
+
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -341,6 +367,7 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
+
 
 // Enroll in course
 router.post("/:id/enroll", auth, async (req, res) => {
