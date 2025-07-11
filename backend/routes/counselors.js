@@ -98,6 +98,7 @@ router.get("/search", async (req, res) => {
       availability,
       date,
       time,
+      userId,
       limit = 10 
     } = req.query;
 
@@ -106,6 +107,7 @@ router.get("/search", async (req, res) => {
     if (language) criteria.language = language;
     if (clientType) criteria.clientType = clientType;
     if (minRating) criteria.minRating = parseFloat(minRating);
+    if (userId) criteria.userId = userId;
 
     let counselors = await Counselor.searchCounselor(criteria)
       .limit(parseInt(limit));
