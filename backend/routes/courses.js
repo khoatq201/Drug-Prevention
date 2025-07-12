@@ -21,6 +21,7 @@ router.get("/", async (req, res) => {
     } = req.query;
 
     let query = {
+      status: "active",
       isPublished: true,
       "enrollment.isOpen": true,
     };
@@ -293,7 +294,15 @@ router.get("/:id/enrollment", auth, async (req, res) => {
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { includeArchived } = req.query;
+    let query = { _id: req.params.id };
+    
+    // Only include archived courses if admin and explicitly requested
+    if (!(req.user && req.user.hasPermission("admin") && includeArchived === "true")) {
+      query.status = "active";
+    }
+
+    const course = await Course.findOne(query);
 
     if (!course) {
       return res.status(404).json({
@@ -302,7 +311,7 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    if (!course.isPublished) {
+    if (!course.isPublished && !(req.user && req.user.hasPermission("admin"))) {
       return res.status(404).json({
         success: false,
         message: "Khóa học chưa được xuất bản",
@@ -318,10 +327,18 @@ router.get("/:id", async (req, res) => {
     }
 
     // Get lessons for this course
-    const lessons = await Lesson.find({
+    let lessonQuery = {
       courseId: course._id,
+      status: "active",
       isPublished: true,
-    })
+    };
+    
+    // Include archived lessons if admin and explicitly requested
+    if (req.user && req.user.hasPermission("admin") && includeArchived === "true") {
+      delete lessonQuery.status;
+    }
+
+    const lessons = await Lesson.find(lessonQuery)
       .sort({ order: 1 })
       .select("-content -instructorNotes");
 
@@ -588,7 +605,7 @@ router.delete("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const course = await Course.findByIdAndUpdate(
       req.params.id,
-      { isPublished: false, "enrollment.isOpen": false },
+      { status: "archived", isPublished: false, "enrollment.isOpen": false },
       { new: true }
     );
 
@@ -601,7 +618,7 @@ router.delete("/:id", auth, authorize("admin"), async (req, res) => {
 
     res.json({
       success: true,
-      message: "Khóa học đã được xóa thành công",
+      message: "Khóa học đã được xóa mềm (archived)",
     });
   } catch (error) {
     console.error("Delete course error:", error);
@@ -672,6 +689,211 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy thống kê khóa học",
+    });
+  }
+});
+
+// Admin: Get all courses with admin filters
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      category,
+      level,
+      isPublished,
+      search,
+      page = 1,
+      limit = 20,
+      sort = "-createdAt",
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (category) query.category = category;
+    if (level) query.level = level;
+    if (isPublished !== undefined && isPublished !== "") {
+      query.isPublished = isPublished === "true";
+    }
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "category":
+        sortOptions = { category: 1 };
+        break;
+      case "level":
+        sortOptions = { level: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const courses = await Course.find(query)
+      .select("-modules.quiz")
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Course.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: courses,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: courses.length,
+        totalResults: total,
+      },
+      filters: {
+        category,
+        level,
+        isPublished,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Get admin courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách khóa học",
+    });
+  }
+});
+
+// Get all courses including archived (admin only)
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      level,
+      ageGroup,
+      language,
+      sort = "-createdAt",
+      page = 1,
+      limit = 20,
+      search,
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (status) query.status = status;
+    if (category) query.category = category;
+    if (level) query.level = level;
+    if (ageGroup) query.targetAgeGroup = ageGroup;
+    if (language) query.language = language;
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "category":
+        sortOptions = { category: 1 };
+        break;
+      case "level":
+        sortOptions = { level: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const courses = await Course.find(query)
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Course.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: courses,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: courses.length,
+        totalResults: total,
+      },
+      filters: {
+        status,
+        category,
+        level,
+        ageGroup,
+        language,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Get all courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách khóa học",
+    });
+  }
+});
+
+// Restore archived course (admin only)
+router.patch("/:id/restore", auth, authorize("admin"), async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { status: "active" },
+      { new: true }
+    );
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khóa học",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Khóa học đã được khôi phục thành công",
+      data: course,
+    });
+  } catch (error) {
+    console.error("Restore course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi khôi phục khóa học",
     });
   }
 });

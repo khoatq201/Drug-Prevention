@@ -213,18 +213,19 @@ userSchema.statics.findByAgeGroup = function (ageGroup) {
   return this.find({ ageGroup, isActive: true });
 };
 
-// Method to check role permissions
+// Method to check if user has a required role (role hierarchy: admin > manager > consultant > staff > member > guest)
 userSchema.methods.hasPermission = function (requiredRole) {
-  const roleHierarchy = {
-    guest: 0,
-    member: 1,
-    staff: 2,
-    consultant: 3,
-    manager: 4,
-    admin: 5,
-  };
-
-  return roleHierarchy[this.role] >= roleHierarchy[requiredRole];
+  const hierarchy = [
+    "guest",
+    "member",
+    "staff",
+    "consultant",
+    "manager",
+    "admin",
+  ];
+  const userIndex = hierarchy.indexOf(this.role);
+  const requiredIndex = hierarchy.indexOf(requiredRole);
+  return userIndex >= requiredIndex;
 };
 
 // Method to check if user can access resource

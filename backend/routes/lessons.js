@@ -11,7 +11,7 @@ router.get("/course/:courseId", async (req, res) => {
     const { courseId } = req.params;
     const { moduleId } = req.query;
     
-    let query = { courseId, isPublished: true };
+    let query = { courseId, status: "active", isPublished: true };
     if (moduleId) {
       query.moduleId = moduleId;
     }
@@ -56,7 +56,15 @@ router.get("/course/:courseId", async (req, res) => {
 // Get lesson by ID
 router.get("/:id", auth, async (req, res) => {
   try {
-    const lesson = await Lesson.findById(req.params.id)
+    const { includeArchived } = req.query;
+    let query = { _id: req.params.id };
+    
+    // Only include archived lessons if admin and explicitly requested
+    if (!(req.user.hasPermission("admin") && includeArchived === "true")) {
+      query.status = "active";
+    }
+
+    const lesson = await Lesson.findOne(query)
       .populate("courseId", "title description")
       .populate("prerequisites", "title order");
     
@@ -458,30 +466,156 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
 // Delete lesson (admin only)
 router.delete("/:id", auth, authorize("admin"), async (req, res) => {
   try {
-    const lesson = await Lesson.findByIdAndDelete(req.params.id);
-    
+    const lesson = await Lesson.findByIdAndUpdate(
+      req.params.id,
+      { status: "archived", isPublished: false },
+      { new: true }
+    );
+
     if (!lesson) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy bài học",
       });
     }
-    
+
     // Update course statistics
     const course = await Course.findById(lesson.courseId);
     if (course) {
       await course.updateStats();
     }
-    
+
     res.json({
       success: true,
-      message: "Bài học đã được xóa thành công",
+      message: "Bài học đã được xóa mềm (archived)",
     });
   } catch (error) {
     console.error("Error deleting lesson:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi khi xóa bài học",
+    });
+  }
+});
+
+// Get all lessons including archived (admin only)
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      status,
+      courseId,
+      moduleId,
+      type,
+      sort = "-createdAt",
+      page = 1,
+      limit = 20,
+      search,
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (status) query.status = status;
+    if (courseId) query.courseId = courseId;
+    if (moduleId) query.moduleId = moduleId;
+    if (type) query.type = type;
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "order":
+        sortOptions = { order: 1 };
+        break;
+      case "type":
+        sortOptions = { type: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const lessons = await Lesson.find(query)
+      .populate("courseId", "title")
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Lesson.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: lessons,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: lessons.length,
+        totalResults: total,
+      },
+      filters: {
+        status,
+        courseId,
+        moduleId,
+        type,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Get all lessons error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách bài học",
+    });
+  }
+});
+
+// Restore archived lesson (admin only)
+router.patch("/:id/restore", auth, authorize("admin"), async (req, res) => {
+  try {
+    const lesson = await Lesson.findByIdAndUpdate(
+      req.params.id,
+      { status: "active" },
+      { new: true }
+    );
+
+    if (!lesson) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài học",
+      });
+    }
+
+    // Update course statistics
+    const course = await Course.findById(lesson.courseId);
+    if (course) {
+      await course.updateStats();
+    }
+
+    res.json({
+      success: true,
+      message: "Bài học đã được khôi phục thành công",
+      data: lesson,
+    });
+  } catch (error) {
+    console.error("Restore lesson error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi khôi phục bài học",
     });
   }
 });

@@ -267,110 +267,25 @@ const courseData = [
         description: "Khái niệm, phân loại và lịch sử ma túy",
         duration: 60,
         order: 1,
-        lessons: [
-          {
-            title: "Ma túy là gì?",
-            content: "Định nghĩa và khái niệm cơ bản về ma túy...",
-            type: "video",
-            duration: 15,
-            order: 1,
-          },
-          {
-            title: "Phân loại ma túy",
-            content: "Các loại ma túy phổ biến và đặc điểm...",
-            type: "text",
-            duration: 20,
-            order: 2,
-          },
-          {
-            title: "Lịch sử và tình hình hiện tại",
-            content: "Tình hình sử dụng ma túy ở Việt Nam và thế giới...",
-            type: "video",
-            duration: 25,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Tác hại của ma túy",
         description: "Những tác động tiêu cực đối với cá nhân và xã hội",
         duration: 90,
         order: 2,
-        lessons: [
-          {
-            title: "Tác hại đối với sức khỏe thể chất",
-            content: "Những ảnh hưởng của ma túy đến cơ thể...",
-            type: "video",
-            duration: 30,
-            order: 1,
-          },
-          {
-            title: "Tác hại đối với sức khỏe tâm thần",
-            content: "Rối loạn tâm lý do sử dụng ma túy...",
-            type: "text",
-            duration: 30,
-            order: 2,
-          },
-          {
-            title: "Tác động xã hội",
-            content: "Ảnh hưởng đến gia đình và cộng đồng...",
-            type: "video",
-            duration: 30,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Các yếu tố nguy cơ",
         description: "Nhận biết các yếu tố có thể dẫn đến sử dụng ma túy",
         duration: 60,
         order: 3,
-        lessons: [
-          {
-            title: "Yếu tố cá nhân",
-            content: "Những đặc điểm cá nhân làm tăng nguy cơ...",
-            type: "text",
-            duration: 20,
-            order: 1,
-          },
-          {
-            title: "Yếu tố môi trường",
-            content: "Ảnh hưởng của môi trường sống...",
-            type: "video",
-            duration: 20,
-            order: 2,
-          },
-          {
-            title: "Áp lực xã hội",
-            content: "Tác động của áp lực từ bạn bè và xã hội...",
-            type: "text",
-            duration: 20,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Phòng ngừa và bảo vệ bản thân",
         description: "Các biện pháp phòng ngừa hiệu quả",
         duration: 30,
         order: 4,
-        lessons: [
-          {
-            title: "Kỹ năng từ chối",
-            content: "Cách nói không với ma túy...",
-            type: "video",
-            duration: 15,
-            order: 1,
-          },
-          {
-            title: "Xây dựng lối sống lành mạnh",
-            content: "Những thói quen tích cực...",
-            type: "text",
-            duration: 15,
-            order: 2,
-          },
-        ],
-      },
+        },
     ],
     requirements: ["Không có yêu cầu tiên quyết"],
     whatYouWillLearn: [
@@ -404,103 +319,25 @@ const courseData = [
         description: "Bản chất của nghiện và quá trình hình thành",
         duration: 90,
         order: 1,
-        lessons: [
-          {
-            title: "Nghiện là gì?",
-            content: "Định nghĩa và cơ chế hình thành nghiện...",
-            type: "video",
-            duration: 30,
-            order: 1,
-          },
-          {
-            title: "Các giai đoạn của nghiện",
-            content: "Từ thử nghiệm đến nghiện nặng...",
-            type: "text",
-            duration: 30,
-            order: 2,
-          },
-          {
-            title: "Dấu hiệu nhận biết",
-            content: "Cách phát hiện sớm vấn đề nghiện...",
-            type: "video",
-            duration: 30,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Kỹ năng giao tiếp",
         description: "Cách nói chuyện hiệu quả với người có vấn đề ma túy",
         duration: 120,
         order: 2,
-        lessons: [
-          {
-            title: "Lắng nghe không phán xét",
-            content: "Kỹ năng lắng nghe tích cực...",
-            type: "video",
-            duration: 40,
-            order: 1,
-          },
-          {
-            title: "Cách đặt câu hỏi",
-            content: "Đặt câu hỏi mở để hiểu rõ vấn đề...",
-            type: "text",
-            duration: 40,
-            order: 2,
-          },
-          {
-            title: "Xử lý các tình huống khó khăn",
-            content: "Đối phó với sự chối bỏ và tức giận...",
-            type: "video",
-            duration: 40,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Các phương pháp hỗ trợ",
         description: "Những cách tiếp cận để giúp đỡ người nghiện",
         duration: 90,
         order: 3,
-        lessons: [
-          {
-            title: "Can thiệp động lực",
-            content: "Kỹ thuật tăng cường động lực thay đổi...",
-            type: "video",
-            duration: 45,
-            order: 1,
-          },
-          {
-            title: "Hỗ trợ gia đình",
-            content: "Cách toàn gia đình cùng tham gia...",
-            type: "text",
-            duration: 45,
-            order: 2,
-          },
-        ],
-      },
+        },
       {
         title: "Chăm sóc bản thân",
         description: "Tự chăm sóc khi hỗ trợ người khác",
         duration: 60,
         order: 4,
-        lessons: [
-          {
-            title: "Quản lý stress",
-            content: "Cách xử lý áp lực khi giúp đỡ người khác...",
-            type: "video",
-            duration: 30,
-            order: 1,
-          },
-          {
-            title: "Tìm kiếm hỗ trợ",
-            content: "Khi nào cần sự giúp đỡ chuyên nghiệp...",
-            type: "text",
-            duration: 30,
-            order: 2,
-          },
-        ],
-      },
+        },
     ],
     requirements: [
       "Hoàn thành khóa học cơ bản",
@@ -537,110 +374,25 @@ const courseData = [
         description: "Hiện trạng và thách thức hiện tại",
         duration: 75,
         order: 1,
-        lessons: [
-          {
-            title: "Thống kê và số liệu",
-            content: "Tình hình sử dụng ma túy ở học sinh, sinh viên...",
-            type: "text",
-            duration: 25,
-            order: 1,
-          },
-          {
-            title: "Các yếu tố nguy cơ trong trường học",
-            content: "Những điều kiện thuận lợi cho ma túy...",
-            type: "video",
-            duration: 25,
-            order: 2,
-          },
-          {
-            title: "Dấu hiệu cảnh báo",
-            content: "Nhận biết học sinh có vấn đề...",
-            type: "text",
-            duration: 25,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Xây dựng chương trình phòng ngừa",
         description: "Thiết kế các hoạt động giáo dục phòng ngừa",
         duration: 120,
         order: 2,
-        lessons: [
-          {
-            title: "Nguyên tắc giáo dục phòng ngừa",
-            content: "Các nguyên tắc cơ bản khi thiết kế chương trình...",
-            type: "video",
-            duration: 40,
-            order: 1,
-          },
-          {
-            title: "Phương pháp giảng dạy hiệu quả",
-            content: "Kỹ thuật truyền đạt thông tin hấp dẫn...",
-            type: "text",
-            duration: 40,
-            order: 2,
-          },
-          {
-            title: "Thiết kế hoạt động thực hành",
-            content: "Các trò chơi và bài tập tương tác...",
-            type: "video",
-            duration: 40,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Xử lý các tình huống khó khăn",
         description: "Ứng phó khi phát hiện học sinh sử dụng ma túy",
         duration: 75,
         order: 3,
-        lessons: [
-          {
-            title: "Quy trình xử lý",
-            content: "Các bước cần thực hiện khi phát hiện vấn đề...",
-            type: "text",
-            duration: 25,
-            order: 1,
-          },
-          {
-            title: "Làm việc với gia đình",
-            content: "Cách trao đổi với phụ huynh...",
-            type: "video",
-            duration: 25,
-            order: 2,
-          },
-          {
-            title: "Phối hợp với chuyên gia",
-            content: "Khi nào cần chuyển gửi...",
-            type: "text",
-            duration: 25,
-            order: 3,
-          },
-        ],
-      },
+        },
       {
         title: "Xây dựng môi trường tích cực",
         description: "Tạo không gian an toàn và hỗ trợ",
         duration: 30,
         order: 4,
-        lessons: [
-          {
-            title: "Văn hóa trường học tích cực",
-            content: "Xây dựng môi trường không khoan nhượng với ma túy...",
-            type: "video",
-            duration: 15,
-            order: 1,
-          },
-          {
-            title: "Hoạt động ngoại khóa",
-            content: "Tổ chức các hoạt động lành mạnh...",
-            type: "text",
-            duration: 15,
-            order: 2,
-          },
-        ],
-      },
+        },
     ],
     requirements: [
       "Là giáo viên hoặc nhân viên giáo dục",
@@ -1051,16 +803,16 @@ const seedBlogs = async () => {
     // Create sample author (admin user)
     let author = await User.findOne({ role: "admin" });
     if (!author) {
-      const hashedPassword = await bcrypt.hash("admin123", 12);
-      author = await User.create({
+      const admin = new User({
         firstName: "Admin",
         lastName: "System",
         email: "admin@drugprevention.com",
-        password: hashedPassword,
+        password: "admin123", // plain text
         role: "admin",
         ageGroup: "other",
         isEmailVerified: true,
       });
+      await admin.save(); // middleware sẽ hash password
     }
 
     // Add author to blog data
@@ -1086,6 +838,7 @@ const seedCourses = async () => {
 
     // Clear existing courses
     await Course.deleteMany({});
+    console.log("✅ Cleared existing courses");
 
     // Create sample instructor (admin user)
     let instructor = await User.findOne({ role: "admin" });
@@ -1100,19 +853,67 @@ const seedCourses = async () => {
         ageGroup: "other",
         isEmailVerified: true,
       });
+      console.log("✅ Created instructor:", instructor._id);
+    } else {
+      console.log("✅ Found existing instructor:", instructor._id);
     }
 
     // Add instructor to course data
     const coursesWithInstructor = courseData.map((course) => ({
       ...course,
       instructor: instructor._id,
+      status: 'active',
+      modules: course.modules?.map(module => ({
+        ...module,
+        status: 'active',
+        lessons: module.lessons?.map(lesson => ({
+          ...lesson,
+          status: 'active',
+        })) || [],
+      })) || [],
     }));
 
-    // Insert courses
-    await Course.insertMany(coursesWithInstructor);
+    console.log(`📝 Prepared ${coursesWithInstructor.length} courses for insertion`);
+    
+    // Log first course structure for debugging
+    if (coursesWithInstructor.length > 0) {
+      console.log("🔍 First course structure:");
+      console.log(JSON.stringify(coursesWithInstructor[0], null, 2));
+    }
+
+    // Try to insert courses one by one to identify which one fails
+    for (let i = 0; i < coursesWithInstructor.length; i++) {
+      try {
+        console.log(`📝 Inserting course ${i + 1}/${coursesWithInstructor.length}: ${coursesWithInstructor[i].title}`);
+        
+        const course = new Course(coursesWithInstructor[i]);
+        
+        // Validate before saving
+        const validationError = course.validateSync();
+        if (validationError) {
+          console.error(`❌ Validation error for course ${i + 1}:`, validationError.message);
+          console.error("Validation details:", validationError.errors);
+          throw validationError;
+        }
+        
+        await course.save();
+        console.log(`✅ Successfully inserted course: ${course.title}`);
+        
+      } catch (error) {
+        console.error(`❌ Failed to insert course ${i + 1}: ${coursesWithInstructor[i].title}`);
+        console.error("Error details:", error.message);
+        if (error.errors) {
+          console.error("Validation errors:", error.errors);
+        }
+        throw error;
+      }
+    }
+    
     console.log(`✅ Created ${coursesWithInstructor.length} courses`);
   } catch (error) {
-    console.error("Error seeding courses:", error);
+    console.error("❌ Error seeding courses:", error);
+    console.error("Full error object:", error);
+    throw error;
   }
 };
 

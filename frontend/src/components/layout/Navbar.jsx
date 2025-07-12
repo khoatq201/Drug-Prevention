@@ -43,10 +43,10 @@ const Navbar = () => {
       { name: "Đặt lịch hẹn", href: "/appointments" },
     ];
 
-    // Add admin items for staff and above
-    if (user && (user.role === 'staff' || user.role === 'consultant' || user.role === 'manager' || user.role === 'admin')) {
+    // Add admin items for admin only
+    if (user && user.role === 'admin') {
       authenticatedItems.push(
-        { name: "Quản lý", href: "/admin", role: "staff" }
+        { name: "Quản trị", href: "/admin", role: "admin" }
       );
     }
 
