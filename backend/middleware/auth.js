@@ -146,10 +146,33 @@ const requireEmailVerification = (req, res, next) => {
   next();
 };
 
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.header("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select("-password");
+    if (!user || !user.isActive) {
+      req.user = null;
+      return next();
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};
+
 module.exports = {
   auth,
   authorize,
   authorizeResource,
   authorizeOwnerOrAdmin,
   requireEmailVerification,
+  optionalAuth,
 };

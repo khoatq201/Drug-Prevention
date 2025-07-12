@@ -21,7 +21,7 @@ import toast from "react-hot-toast";
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated, api } = useAuth();
+  const { user, isAuthenticated, api, loading: authLoading } = useAuth();
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,11 +29,18 @@ const CourseDetail = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
+    console.log("🔍 CourseDetail useEffect triggered");
+    console.log("🔍 authLoading:", authLoading);
+    console.log("🔍 isAuthenticated:", isAuthenticated);
+    console.log("🔍 user:", user);
+    
     fetchCourse();
-    if (isAuthenticated) {
+    // Chỉ fetch enrollment khi auth loading hoàn thành và user đã đăng nhập
+    if (!authLoading && isAuthenticated && user) {
+      console.log("🔍 Fetching enrollment...");
       fetchEnrollment();
     }
-  }, [id, isAuthenticated]);
+  }, [id, authLoading, isAuthenticated, user]);
 
   const fetchCourse = async () => {
     try {
@@ -52,15 +59,33 @@ const CourseDetail = () => {
   };
 
   const fetchEnrollment = async () => {
-    debugger
+    console.log("🚀 fetchEnrollment called");
+    console.log("🚀 Token exists:", localStorage.getItem("token") ? "yes" : "no");
+    console.log("🚀 Token value:", localStorage.getItem("token")?.substring(0, 20) + "...");
+    
     try {
-      const response = await api.get(`/courses/${id}/enrollment`);
+      // Kiểm tra xem api instance có token không
+      const token = localStorage.getItem("token");
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
+      console.log("🚀 Request config:", config);
+      
+      const response = await api.get(`/courses/${id}/enrollment`, config);
+      console.log("🔍 Enrollment response:", response.data);
       if (response.data.success) {
         setEnrollment(response.data.data);
+        if (response.data.data.status === "enrolled") {
+          setEnrolling(true);
+        }
       }
     } catch (error) {
       // Not enrolled yet, which is fine
-      console.log("Not enrolled in course");
+      console.log("Not enrolled in course:", error.message);
+      console.log("🔍 Error response:", error.response?.data);
+      console.log("🔍 Error status:", error.response?.status);
     }
   };
 
@@ -156,7 +181,7 @@ const CourseDetail = () => {
       : 0;
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="spinner"></div>

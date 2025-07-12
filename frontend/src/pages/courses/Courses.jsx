@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext";
@@ -14,9 +14,10 @@ import {
 } from "@heroicons/react/24/outline";
 
 const Courses = () => {
-  const { user, isAuthenticated, api } = useAuth();
+  const { user, isAuthenticated, api, loading: authLoading } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasInitialFetchRef = useRef(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("");
@@ -49,20 +50,58 @@ const Courses = () => {
     { value: "other", label: "Khác" },
   ];
 
+  // Initial fetch - chỉ chạy 1 lần khi auth loading hoàn thành và user data sẵn sàng
   useEffect(() => {
-    fetchCourses();
+    console.log("🔍 useEffect authLoading changed:", authLoading);
+    console.log("🔍 Current user:", user);
+    console.log("🔍 Current isAuthenticated:", isAuthenticated);
+    
+    // Chỉ fetch khi auth loading hoàn thành và chưa fetch lần đầu
+    if (!authLoading && !hasInitialFetchRef.current) {
+      // Nếu có token, đợi user data load xong
+      if (localStorage.getItem("token")) {
+        if (user && isAuthenticated) {
+          fetchCourses();
+          hasInitialFetchRef.current = true;
+        }
+      } else {
+        // Không có token, fetch ngay
+        fetchCourses();
+        hasInitialFetchRef.current = true;
+      }
+    }
+  }, [authLoading, user, isAuthenticated]);
+
+  // Refetch khi filters thay đổi (sau khi đã fetch lần đầu)
+  useEffect(() => {
+    if (hasInitialFetchRef.current) {
+      fetchCourses();
+    }
   }, [selectedCategory, selectedLevel, searchTerm]);
 
   const fetchCourses = async () => {
+    console.log("🚀 fetchCourses called");
+    console.log("🚀 authLoading:", authLoading);
+    console.log("🚀 hasInitialFetchRef.current:", hasInitialFetchRef.current);
+    console.log("🚀 localStorage token:", localStorage.getItem("token") ? "exists" : "missing");
+    
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (selectedCategory) params.append("category", selectedCategory);
       if (selectedLevel) params.append("level", selectedLevel);
       if (searchTerm) params.append("search", searchTerm);
-      if (user?.ageGroup) params.append("ageGroup", user.ageGroup);
+      
+      // Chỉ gửi ageGroup nếu user đã đăng nhập và có ageGroup
+      if (isAuthenticated && user?.ageGroup) {
+        params.append("ageGroup", user.ageGroup);
+      }
 
+      console.log("🔍 Fetching courses with params:", params.toString());
+      console.log("🔍 User:", user);
+      console.log("🔍 IsAuthenticated:", isAuthenticated);
       const response = await api.get(`/courses?${params.toString()}`);
+      console.log("🔍 Response courses count:", response.data.data?.length || 0);
       setCourses(response.data.data || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -231,7 +270,7 @@ const Courses = () => {
         </motion.div>
 
         {/* Courses Grid */}
-        {loading ? (
+        {authLoading || loading ? (
           <div className="flex justify-center">
             <div className="spinner"></div>
           </div>
@@ -243,13 +282,13 @@ const Courses = () => {
             {courses.map((course) => (
               <motion.div
                 key={course._id}
-                className="course-card"
+                className="course-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
                 {course.thumbnail && (
-                  <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
+                  <div className="aspect-video bg-gray-200 overflow-hidden">
                     <img
                       src={course.thumbnail}
                       alt={course.title}
@@ -258,7 +297,7 @@ const Courses = () => {
                   </div>
                 )}
                 
-                <div className="p-6">
+                <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-3">
                     <span className={`course-level ${getLevelStyle(course.level)}`}>
                       {getLevelText(course.level)}
@@ -275,7 +314,7 @@ const Courses = () => {
                     {course.title}
                   </h3>
                   
-                  <p className="text-gray-600 mb-4 line-clamp-3">
+                  <p className="text-gray-600 mb-4 line-clamp-3 flex-1">
                     {course.description}
                   </p>
 
@@ -290,7 +329,7 @@ const Courses = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-auto">
                     <div className="text-lg font-bold text-green-600">
                       {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
                     </div>
