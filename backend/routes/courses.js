@@ -588,8 +588,8 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
   }
 });
 
-// Create new course (admin only)
-router.post("/", auth, authorize("admin"), async (req, res) => {
+// Create new course (admin & manager)
+router.post("/", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const course = new Course({
       ...req.body,
@@ -613,8 +613,8 @@ router.post("/", auth, authorize("admin"), async (req, res) => {
   }
 });
 
-// Update course (admin only)
-router.put("/:id", auth, authorize("admin"), async (req, res) => {
+// Update course (admin & manager)
+router.put("/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const updateData = { ...req.body };
     
@@ -650,8 +650,8 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
   }
 });
 
-// Delete course (admin only)
-router.delete("/:id", auth, authorize("admin"), async (req, res) => {
+// Delete course (admin & manager)
+router.delete("/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const course = await Course.findByIdAndUpdate(
       req.params.id,
@@ -740,8 +740,8 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     });
   }
 });
-// Admin: Get all courses with admin filters
-router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+// Admin/Manager: Get all courses with admin filters
+router.get("/admin/all", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const {
       category,

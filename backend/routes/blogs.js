@@ -28,7 +28,7 @@ router.get("/", async (req, res) => {
 
     // Only filter by language if specified
     if (language) {
-      query.language = language;
+      query.lang = language;
     }
 
     // Apply filters
@@ -155,7 +155,7 @@ router.get("/search", async (req, res) => {
     let query = {
       status: "published",
       publishedAt: { $lte: new Date() },
-      language,
+      lang: language,
     };
 
     // Apply filters
@@ -896,8 +896,8 @@ router.get("/stats/overview", auth, authorize("manager"), async (req, res) => {
 
 // @route   GET /api/blogs/admin/all
 // @desc    Get all blogs for admin (with pagination and filtering)
-// @access  Private (Admin only)
-router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+// @access  Private (Admin and Manager)
+router.get("/admin/all", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const {
       status,
@@ -918,7 +918,7 @@ router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
     if (category) query.category = category;
     if (author) query.author = author;
     if (featured !== undefined && featured !== "") query["settings.isFeatured"] = featured === "true";
-    if (language) query.language = language;
+    if (language) query.lang = language;
 
     // Search functionality
     if (search) {
@@ -991,9 +991,9 @@ router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
 });
 
 // @route   POST /api/blogs/admin/create
-// @desc    Create new blog (Admin only)
-// @access  Private (Admin only)
-router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
+// @desc    Create new blog (Admin and Manager)
+// @access  Private (Admin and Manager)
+router.post("/admin/create", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const {
       title,
@@ -1036,7 +1036,7 @@ router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
       category,
       tags: tags || [],
       targetAudience: targetAudience || [],
-      language: language || "vi",
+      lang: language || "vi",
       status: status || "draft",
       author: req.user._id,
       featuredImage,
@@ -1085,9 +1085,9 @@ router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
 });
 
 // @route   PUT /api/blogs/admin/:id
-// @desc    Update blog by admin
-// @access  Private (Admin only)
-router.put("/admin/:id", auth, authorize("admin"), async (req, res) => {
+// @desc    Update blog by admin or manager
+// @access  Private (Admin and Manager)
+router.put("/admin/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -1142,7 +1142,7 @@ router.put("/admin/:id", auth, authorize("admin"), async (req, res) => {
       category,
       tags,
       targetAudience,
-      language,
+      lang: language, // FIXED: use 'lang' instead of 'language'
       status,
       featuredImage,
       seo,
@@ -1195,9 +1195,9 @@ router.put("/admin/:id", auth, authorize("admin"), async (req, res) => {
 });
 
 // @route   DELETE /api/blogs/admin/:id
-// @desc    Delete blog by admin (soft delete)
-// @access  Private (Admin only)
-router.delete("/admin/:id", auth, authorize("admin"), async (req, res) => {
+// @desc    Delete blog by admin or manager (soft delete)
+// @access  Private (Admin and Manager)
+router.delete("/admin/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1228,9 +1228,9 @@ router.delete("/admin/:id", auth, authorize("admin"), async (req, res) => {
 });
 
 // @route   POST /api/blogs/admin/:id/restore
-// @desc    Restore deleted blog by admin
-// @access  Private (Admin only)
-router.post("/admin/:id/restore", auth, authorize("admin"), async (req, res) => {
+// @desc    Restore deleted blog by admin or manager
+// @access  Private (Admin and Manager)
+router.post("/admin/:id/restore", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1261,9 +1261,9 @@ router.post("/admin/:id/restore", auth, authorize("admin"), async (req, res) => 
 });
 
 // @route   GET /api/blogs/admin/stats
-// @desc    Get blog statistics for admin dashboard
-// @access  Private (Admin only)
-router.get("/admin/stats", auth, authorize("admin"), async (req, res) => {
+// @desc    Get blog statistics for admin or manager dashboard
+// @access  Private (Admin and Manager)
+router.get("/admin/stats", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 

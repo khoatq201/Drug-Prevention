@@ -243,7 +243,7 @@ blogSchema.index({ slug: 1 }, { unique: true }); // Explicitly define for clarit
 
 // Virtuals and methods remain unchanged
 blogSchema.virtual("likesCount").get(function () {
-  return this.likes.length;
+  return (this.likes || []).length;
 });
 
 blogSchema.virtual("commentsCount").get(function () {
@@ -257,7 +257,7 @@ blogSchema.virtual("approvedComments").get(function () {
 blogSchema.virtual("estimatedReadingTime").get(function () {
   if (this.readingTime > 0) return this.readingTime;
   const wordsPerMinute = 200;
-  const words = this.wordCount || this.content.split(" ").length;
+  const words = this.wordCount || (this.content || '').split(" ").length;
   return Math.ceil(words / wordsPerMinute);
 });
 

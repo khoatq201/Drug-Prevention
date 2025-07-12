@@ -49,6 +49,12 @@ const Navbar = () => {
         { name: "Quản trị", href: "/admin", role: "admin" }
       );
     }
+    // Add manager items for manager only
+    if (user && user.role === 'manager') {
+      authenticatedItems.push(
+        { name: "Quản lý", href: "/manager", role: "manager" }
+      );
+    }
 
     return authenticatedItems;
   };
@@ -135,6 +141,15 @@ const Navbar = () => {
                     >
                       Bảng điều khiển
                     </Link>
+                    {user?.role === 'manager' && (
+                      <Link
+                        to="/manager"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Quản lý hệ thống
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -271,6 +286,15 @@ const Navbar = () => {
                     >
                       Bảng điều khiển
                     </Link>
+                    {user?.role === 'manager' && (
+                      <Link
+                        to="/manager"
+                        className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Quản lý hệ thống
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50"

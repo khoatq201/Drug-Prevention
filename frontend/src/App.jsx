@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
+import { ManagerRoute } from "./components/RoleProtectedRoute";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
@@ -30,7 +31,13 @@ import Users from "./pages/admin/Users";
 import AdminCourses from "./pages/admin/AdminCourses";
 import CourseForm from "./pages/admin/CourseForm";
 import Blogs from "./pages/admin/Blogs";
+import AdminAssessments from "./pages/admin/Assessments";
+import AdminAssessmentDetail from "./pages/admin/AssessmentDetail";
+import ManagerDashboard from "./pages/ManagerDashboard";
 import Lesson from "./pages/courses/Lesson";
+import ManagerCourses from "./pages/manager/ManagerCourses";
+import ManagerAssessments from "./pages/manager/ManagerAssessments";
+import ManagerBlogs from "./pages/manager/ManagerBlogs";
 import "./App.css";
 
 function App() {
@@ -99,11 +106,11 @@ function App() {
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetail />} />
               <Route path="/assessments" element={<Assessments />} />
-              <Route path="/assessments/:id" element={<AssessmentDetail />} />
               <Route
                 path="/assessments/:assessmentId/result/:resultId"
                 element={<AssessmentResult />}
               />
+              <Route path="/assessments/:id" element={<AssessmentDetail />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:id" element={<BlogPost />} />
 
@@ -157,6 +164,62 @@ function App() {
                 }
               />
               <Route
+                path="/manager"
+                element={
+                  <ManagerRoute>
+                    <ManagerDashboard />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/courses"
+                element={
+                  <ManagerRoute>
+                    <ManagerCourses />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/courses/new"
+                element={
+                  <ManagerRoute>
+                    <CourseForm />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/courses/edit/:id"
+                element={
+                  <ManagerRoute>
+                    <CourseForm />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/assessments"
+                element={
+                  <ManagerRoute>
+                    <ManagerAssessments />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/assessments/:id"
+                element={
+                  <ManagerRoute>
+                    <AssessmentDetail />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/blogs"
+                element={
+                  <ManagerRoute>
+                    <ManagerBlogs />
+                  </ManagerRoute>
+                }
+              />
+              <Route
                 path="/admin/users"
                 element={
                   <ProtectedRoute>
@@ -193,6 +256,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Blogs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/assessments"
+                element={
+                  <ProtectedRoute>
+                    <AdminAssessments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/assessments/:id"
+                element={
+                  <ProtectedRoute>
+                    <AdminAssessmentDetail />
                   </ProtectedRoute>
                 }
               />

@@ -1,18 +1,16 @@
 import React from "react";
 import AdminSidebar from "../../components/layout/AdminSidebar";
 import AdminHeader from "../../components/layout/AdminHeader";
-import CourseManager from "./CourseManager";
+import AssessmentManager from "./AssessmentManager";
 
-const AdminCourses = () => {
+const Assessments = () => {
   return (
-    <CourseManager
+    <AssessmentManager
       role="admin"
       Sidebar={AdminSidebar}
       Header={AdminHeader}
-      addCourseLink="/admin/courses/new"
-      editCourseLink={(id) => `/admin/courses/edit/${id}`}
     />
   );
 };
 
-export default AdminCourses; 
+export default Assessments; 

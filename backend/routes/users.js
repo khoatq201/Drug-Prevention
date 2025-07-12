@@ -99,26 +99,42 @@ router.get("/stats", auth, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Get user's stats in parallel
-    const [assessmentsCompleted, coursesData, appointmentsData] = await Promise.all([
-      Assessment.countDocuments({ userId }),
-      Course.find({ "enrollments.userId": userId }).select("enrollments"),
+    // Get AssessmentResult model
+    const AssessmentResult = Assessment.AssessmentResult;
+
+    // Get user with populated courseHistory and assessmentHistory
+    const user = await User.findById(userId)
+      .populate('courseHistory.courseId', 'title description thumbnail')
+      .populate('assessmentHistory')
+      .populate('appointmentHistory');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng"
+      });
+    }
+
+    // Get additional data in parallel
+    const [assessmentResults, appointmentsData] = await Promise.all([
+      AssessmentResult.find({ userId }).sort({ completedAt: -1 }),
       Appointment.find({ userId })
     ]);
 
-    // Calculate course stats
-    let coursesEnrolled = 0;
-    let coursesCompleted = 0;
+    // Calculate course stats from User.courseHistory
+    const coursesEnrolled = user.courseHistory.length;
+    const coursesCompleted = user.courseHistory.filter(course => 
+      course.completedAt !== null && course.completedAt !== undefined
+    ).length;
+
+    // Calculate assessment stats from User.assessmentHistory
+    const assessmentsCompleted = user.assessmentHistory.length;
     
-    coursesData.forEach(course => {
-      const userEnrollment = course.enrollments.find(e => e.userId.toString() === userId.toString());
-      if (userEnrollment) {
-        coursesEnrolled++;
-        if (userEnrollment.status === 'completed') {
-          coursesCompleted++;
-        }
-      }
-    });
+    // Calculate total score from recent assessments (last 3)
+    const recentAssessments = user.assessmentHistory.slice(-3);
+    const totalScore = recentAssessments.reduce((sum, assessment) => {
+      return sum + (assessment.score || 0);
+    }, 0);
 
     // Calculate appointment stats
     const upcomingAppointments = appointmentsData.filter(apt => {
@@ -128,24 +144,37 @@ router.get("/stats", auth, async (req, res) => {
       return appointmentDate >= today && (apt.status === 'pending' || apt.status === 'confirmed');
     }).length;
 
-    // Get recent assessment scores for total score calculation
-    const recentAssessments = await Assessment.find({ userId })
-      .sort({ completedAt: -1 })
-      .limit(3);
-    
-    let totalScore = 0;
-    if (recentAssessments.length > 0) {
-      totalScore = recentAssessments.reduce((sum, assessment) => {
-        return sum + (assessment.score?.total || 0);
-      }, 0);
-    }
+    // Calculate average progress from courseHistory
+    const averageProgress = user.courseHistory.length > 0 
+      ? Math.round(user.courseHistory.reduce((sum, course) => sum + (course.progress || 0), 0) / user.courseHistory.length)
+      : 0;
 
     const stats = {
       assessmentsCompleted,
       coursesEnrolled,
       coursesCompleted,
       upcomingAppointments,
-      totalScore
+      totalScore,
+      averageProgress,
+      // Additional detailed stats from User model
+      courseProgress: user.courseHistory.map(course => ({
+        courseId: course.courseId,
+        title: course.courseId?.title || 'Unknown Course',
+        progress: course.progress || 0,
+        enrolledAt: course.enrolledAt,
+        completedAt: course.completedAt,
+        certificateUrl: course.certificateUrl
+      })),
+      recentAssessments: recentAssessments.map(assessment => ({
+        assessmentType: assessment.assessmentType,
+        score: assessment.score || 0,
+        riskLevel: assessment.riskLevel || 'unknown',
+        completedAt: assessment.completedAt
+      })),
+      // Additional user stats
+      currentRiskLevel: user.getCurrentRiskLevel(),
+      accountAge: Math.floor((new Date() - user.createdAt) / (1000 * 60 * 60 * 24)), // days
+      lastLogin: user.lastLogin
     };
 
     res.json({

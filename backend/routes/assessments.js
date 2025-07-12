@@ -42,6 +42,72 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get all assessments for admin (with pagination and filters)
+router.get("/admin", auth, authorize("admin", "manager"), async (req, res) => {
+  try {
+    const { 
+      type, 
+      ageGroup, 
+      isActive, 
+      search, 
+      page = 1, 
+      limit = 20,
+      language = "vi" 
+    } = req.query;
+    
+    let query = { language };
+    
+    // Filter by type if provided
+    if (type) {
+      query.type = type;
+    }
+    
+    // Filter by age group if provided
+    if (ageGroup) {
+      query.targetAgeGroup = ageGroup;
+    }
+    
+    // Filter by active status if provided
+    if (isActive !== undefined) {
+      query.isActive = isActive === "true";
+    }
+    
+    // Search by name or description
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const assessments = await Assessment.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(skip);
+    
+    const total = await Assessment.countDocuments(query);
+    
+    res.json({
+      success: true,
+      data: assessments,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / parseInt(limit)),
+        count: assessments.length,
+        totalResults: total,
+      },
+    });
+  } catch (error) {
+    console.error("Get admin assessments error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách bài đánh giá",
+    });
+  }
+});
+
 // Get user's own assessment results (must come before /:id route)
 router.get("/my-assessments", auth, async (req, res) => {
   try {
@@ -398,7 +464,7 @@ router.get("/:assessmentId/result/:resultId", auth, async (req, res) => {
 });
 
 // Create new assessment (admin only)
-router.post("/", auth, authorize("admin"), async (req, res) => {
+router.post("/", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const assessment = new Assessment(req.body);
     await assessment.save();
@@ -419,7 +485,7 @@ router.post("/", auth, authorize("admin"), async (req, res) => {
 });
 
 // Update assessment (admin only)
-router.put("/:id", auth, authorize("admin"), async (req, res) => {
+router.put("/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const assessment = await Assessment.findByIdAndUpdate(
       req.params.id,
@@ -450,7 +516,7 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
 });
 
 // Delete assessment (admin only)
-router.delete("/:id", auth, authorize("admin"), async (req, res) => {
+router.delete("/:id", auth, authorize("admin", "manager"), async (req, res) => {
   try {
     const assessment = await Assessment.findByIdAndUpdate(
       req.params.id,
@@ -474,6 +540,38 @@ router.delete("/:id", auth, authorize("admin"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi xóa bài đánh giá",
+    });
+  }
+});
+
+// Toggle assessment active status (admin only)
+router.patch("/:id/toggle-active", auth, authorize("admin", "manager"), async (req, res) => {
+  try {
+    const { isActive } = req.body;
+    
+    const assessment = await Assessment.findByIdAndUpdate(
+      req.params.id,
+      { isActive },
+      { new: true }
+    );
+    
+    if (!assessment) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài đánh giá",
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: `Bài đánh giá đã được ${isActive ? 'kích hoạt' : 'vô hiệu hóa'} thành công`,
+      data: assessment,
+    });
+  } catch (error) {
+    console.error("Toggle assessment active status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi thay đổi trạng thái bài đánh giá",
     });
   }
 });
