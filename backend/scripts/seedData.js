@@ -267,13 +267,77 @@ const courseData = [
         description: "Khái niệm, phân loại và lịch sử ma túy",
         duration: 60,
         order: 1,
-        },
+        lessons: [
+          {
+            title: "Ma túy là gì?",
+            content: "<h2>Định nghĩa</h2><p>Ma túy là các chất tự nhiên hoặc tổng hợp, khi đưa vào cơ thể sẽ ảnh hưởng đến hệ thần kinh trung ương và gây nghiện.</p>",
+            type: "video",
+            duration: 15,
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: [
+              { title: "Tài liệu tham khảo về ma túy", url: "https://example.com/docs/drug-basics.pdf", type: "pdf" }
+            ]
+          },
+          {
+            title: "Phân loại ma túy",
+            content: "<h2>Phân loại ma túy</h2><ul><li>Ma túy tự nhiên</li><li>Ma túy tổng hợp</li><li>Ma túy bán tổng hợp</li></ul>",
+            type: "text",
+            duration: 20,
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            resources: [
+              { title: "Bảng phân loại ma túy chi tiết", url: "https://example.com/docs/drug-classification.pdf", type: "pdf" }
+            ]
+          },
+          {
+            title: "Lịch sử và tình hình hiện tại",
+            content: "<h2>Lịch sử và tình hình hiện tại</h2><p>Ma túy đã xuất hiện từ lâu đời và có nhiều biến động trong xã hội hiện đại.</p>",
+            type: "video",
+            duration: 25,
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+            resources: []
+          }
+        ]
+      },
       {
         title: "Tác hại của ma túy",
         description: "Những tác động tiêu cực đối với cá nhân và xã hội",
         duration: 90,
         order: 2,
-        },
+        lessons: [
+          {
+            title: "Tác hại đối với sức khỏe thể chất",
+            content: "<h2>Tác hại đối với sức khỏe thể chất</h2><p>Ma túy gây ra nhiều vấn đề về sức khỏe như suy giảm trí nhớ, rối loạn tâm thần, và các bệnh lý khác.</p>",
+            type: "video",
+            duration: 30,
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+            resources: [
+              { title: "Nghiên cứu về tác hại của ma túy", url: "https://example.com/docs/drug-effects.pdf", type: "pdf" }
+            ]
+          },
+          {
+            title: "Tác hại đối với sức khỏe tâm thần",
+            content: "<h2>Tác hại đối với sức khỏe tâm thần</h2><p>Người sử dụng ma túy có nguy cơ cao mắc các rối loạn tâm thần như trầm cảm, lo âu, hoang tưởng.</p>",
+            type: "text",
+            duration: 30,
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: []
+          },
+          {
+            title: "Tác động xã hội",
+            content: "<h2>Tác động xã hội</h2><p>Ma túy không chỉ ảnh hưởng đến cá nhân mà còn gây ra nhiều hệ lụy cho gia đình và xã hội.</p>",
+            type: "video",
+            duration: 30,
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/movie.mp4",
+            resources: []
+          }
+        ]
+      },
       {
         title: "Các yếu tố nguy cơ",
         description: "Nhận biết các yếu tố có thể dẫn đến sử dụng ma túy",

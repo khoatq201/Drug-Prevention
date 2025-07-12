@@ -52,6 +52,7 @@ const CourseDetail = () => {
   };
 
   const fetchEnrollment = async () => {
+    debugger
     try {
       const token = localStorage.getItem("token");
       const response = await api.get(`/courses/${id}/enrollment`, {
@@ -97,6 +98,10 @@ const CourseDetail = () => {
       toast.error("Vui lòng đăng ký khóa học trước");
       return;
     }
+    if (!lessonId) {
+      toast.error("Không tìm thấy bài học!");
+      return;
+    }
     navigate(`/courses/${id}/lessons/${lessonId}`);
   };
 
@@ -139,18 +144,24 @@ const CourseDetail = () => {
     if (!enrollment) return false;
     if (index === 0) return true; // First lesson is always accessible
 
-    // Check if previous lessons are completed
+    // Flatten all lessons
+    const allLessons = course.modules?.flatMap(m => m.lessons || []) || [];
     const completedLessons = enrollment.progress?.completedLessons || [];
-    const previousLessonId = course.modules?.lessons[index - 1]._id;
+    const previousLessonId = allLessons[index - 1] && (
+      typeof allLessons[index - 1]._id === "string"
+        ? allLessons[index - 1]._id
+        : allLessons[index - 1]._id?.$oid
+    );
     return completedLessons.includes(previousLessonId);
   };
 
   const getProgress = () => {
-    if (!enrollment || !course?.modules?.lessons?.length) return 0;
+    if (!enrollment || !course?.modules) return 0;
+    const allLessons = course.modules.flatMap(m => m.lessons || []);
     const completedLessons = enrollment.progress?.completedLessons || [];
-    return Math.round(
-      (completedLessons.length / course.modules?.lessons.length) * 100
-    );
+    return allLessons.length > 0
+      ? Math.round((completedLessons.length / allLessons.length) * 100)
+      : 0;
   };
 
   if (loading) {
@@ -503,16 +514,13 @@ const CourseDetail = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center mb-6">
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {course.price === 0
-                    ? "Miễn phí"
-                    : `${course.price?.toLocaleString()}đ`}
+                  {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
                 </div>
-                {course.originalPrice &&
-                  course.originalPrice > course.price && (
-                    <div className="text-sm text-gray-500 line-through">
-                      {course.originalPrice.toLocaleString()}đ
-                    </div>
-                  )}
+                {course.originalPrice && course.originalPrice > course.pricing.price && (
+                  <div className="text-sm text-gray-500 line-through">
+                    {course.originalPrice.toLocaleString()}đ
+                  </div>
+                )}
               </div>
 
               {enrollment ? (
@@ -520,22 +528,24 @@ const CourseDetail = () => {
                   <div className="text-center text-green-600 font-medium">
                     ✓ Đã đăng ký
                   </div>
-
-                  {course.modules?.lessons?.length > 0 && (
+                  {course.modules && course.modules.length > 0 && (
                     <button
                       onClick={() => {
-                        const firstAccessibleLesson =
-                          course.modules?.lessons.find((lesson, index) =>
-                            isLessonAccessible(lesson, index)
-                          );
-                        if (firstAccessibleLesson) {
-                          handleStartLessson(firstAccessibleLesson._id);
+                        // Flatten all lessons and go to the first one
+                        const allLessons = course.modules.flatMap(m => m.lessons || []);
+                        const firstLesson = allLessons[0];
+                        const lessonId = firstLesson && (typeof firstLesson._id === "string" ? firstLesson._id : firstLesson._id?.$oid);
+                        if (lessonId) {
+                          handleStartLessson(lessonId);
+                        } else {
+                          toast.error("Không tìm thấy bài học đầu tiên!");
+                          console.error("No valid lessonId for first lesson", firstLesson);
                         }
                       }}
                       className="w-full btn-primary"
                     >
                       <PlayIcon className="w-4 h-4 mr-2" />
-                      Tiếp tục học
+                      Học Ngay!
                     </button>
                   )}
                 </div>

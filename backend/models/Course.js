@@ -253,17 +253,26 @@ const courseSchema = new mongoose.Schema(
 
 // Virtual for total lessons count (from stats)
 courseSchema.virtual("totalLessons").get(function () {
-  return this.stats.totalLessons || 0;
+  if (!Array.isArray(this.modules)) return 0;
+  return this.modules.reduce(
+    (total, module) => total + (Array.isArray(module.lessons) ? module.lessons.length : 0),
+    0
+  );
 });
 
 // Virtual for estimated completion time (from stats)
 courseSchema.virtual("estimatedTime").get(function () {
-  return this.stats.totalDuration || this.duration;
-});
-
-// Virtual for enrollment count
-courseSchema.virtual("enrollmentCount").get(function () {
-  return this.enrollment.currentEnrollment || 0;
+  if (!Array.isArray(this.modules)) return 0;
+  return this.modules.reduce((total, module) => {
+    return (
+      total +
+      (Array.isArray(module.lessons)
+        ? module.lessons.reduce((moduleTotal, lesson) => {
+            return moduleTotal + (lesson.duration || 0);
+          }, 0)
+        : 0)
+    );
+  }, 0);
 });
 
 // Static method to find courses by age group

@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Course = require("../models/Course");
 const Lesson = require("../models/Lesson");
@@ -267,10 +268,17 @@ router.get("/search", async (req, res) => {
 
 // Get course enrollment details
 router.get("/:id/enrollment", auth, async (req, res) => {
+  console.log("Reached /:id/enrollment endpoint with courseId:", req.params.id);
   try {
-    const userProgress = await UserProgress.findByUserAndCourse(
-      req.user._id,
-      req.params.id
+    const courseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID khóa học không hợp lệ",
+      });
+    }
+    const enrollment = req.user.courseHistory.find(
+      (enroll) => enroll.courseId.toString() === courseId
     );
     if (!userProgress) {
       return res.status(404).json({
@@ -278,9 +286,13 @@ router.get("/:id/enrollment", auth, async (req, res) => {
         message: "Bạn chưa đăng ký khóa học này",
       });
     }
+    // Return progress.completedLessons and percent
     res.json({
       success: true,
-      data: userProgress,
+      data: {
+        ...enrollment.toObject ? enrollment.toObject() : enrollment,
+        progress: enrollment.progress || { completedLessons: [], percent: 0 },
+      },
     });
   } catch (error) {
     console.error("Get enrollment error:", error);
@@ -290,7 +302,6 @@ router.get("/:id/enrollment", auth, async (req, res) => {
     });
   }
 });
-
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -347,30 +358,44 @@ router.get("/:id", async (req, res) => {
 
     let userProgress = null;
     if (!req.user) {
-      // For non-authenticated users, only show preview lessons
-      courseData.lessons = lessons.filter((lesson) => lesson.isPreview);
+      // For non-authenticated users, only show basic info
+      courseData.modules = courseData.modules.map(module => ({
+        ...module,
+        lessons: module.lessons.map(lesson => ({
+          _id: lesson._id,
+          title: lesson.title,
+          type: lesson.type,
+          duration: lesson.duration,
+          order: lesson.order,
+          content: lesson.content,
+          videoUrl: lesson.videoUrl,
+          resources: lesson.resources,
+        })),
+        quiz: undefined,
+      }));
     } else {
       // Get user progress
       userProgress = await UserProgress.findByUserAndCourse(
         req.user._id,
         course._id
       );
-
-      if (userProgress) {
-        // User is enrolled, show all lessons with accessibility info
-        courseData.lessons = lessons.map((lesson) => {
-          const lessonObj = lesson.toObject();
-          lessonObj.isAccessible = lesson.isAccessibleForUser(userProgress);
-          lessonObj.isCompleted =
-            userProgress.completedLessons?.some(
-              (completed) =>
-                completed.lessonId.toString() === lesson._id.toString()
-            ) || false;
-          return lessonObj;
-        });
-      } else {
-        // User not enrolled, show only preview lessons
-        courseData.lessons = lessons.filter((lesson) => lesson.isPreview);
+      
+      if (!userEnrolled) {
+        // Show preview content only
+        courseData.modules = courseData.modules.map(module => ({
+          ...module,
+          lessons: module.lessons.map((lesson, index) => ({
+            _id: lesson._id,
+            title: lesson.title,
+            type: lesson.type,
+            duration: lesson.duration,
+            order: lesson.order,
+            content: index === 0 ? lesson.content : "Nội dung khóa học. Đăng ký để xem chi tiết.",
+            videoUrl: lesson.videoUrl,
+            resources: lesson.resources,
+          })),
+          quiz: undefined,
+        }));
       }
     }
 
@@ -467,60 +492,105 @@ router.post("/:id/enroll", auth, async (req, res) => {
   }
 });
 
-// // Get user's enrollment status
-// router.get("/:id/enrollment", auth, async (req, res) => {
-//   try {
-//     const userProgress = await UserProgress.findByUserAndCourse(
-//       req.user._id,
-//       req.params.id
-//     );
-
-//     res.json({
-//       success: true,
-//       data: userProgress,
-//     });
-//   } catch (error) {
-//     console.error("Get enrollment error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Lỗi khi lấy thông tin đăng ký",
-//     });
-//   }
-// });
+// Update course progress
+router.put("/:id/progress", auth, async (req, res) => {
+  try {
+    const { lessonId } = req.body;
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khóa học",
+      });
+    }
+    // Check if user is enrolled
+    const enrollment = req.user.courseHistory.find(
+      (enrollment) => enrollment.courseId.toString() === course._id.toString()
+    );
+    if (!enrollment) {
+      return res.status(400).json({
+        success: false,
+        message: "Bạn chưa đăng ký khóa học này",
+      });
+    }
+    // Add lessonId to completedLessons if not already present
+    if (!enrollment.progress) enrollment.progress = { completedLessons: [], percent: 0 };
+    if (!enrollment.progress.completedLessons) enrollment.progress.completedLessons = [];
+    if (!enrollment.progress.completedLessons.includes(lessonId)) {
+      enrollment.progress.completedLessons.push(lessonId);
+    }
+    enrollment.progress.lastLesson = lessonId;
+    // Calculate percent progress
+    const totalLessons = course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+    const completedCount = enrollment.progress.completedLessons.length;
+    enrollment.progress.percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+    // Mark completedAt if all lessons done
+    if (completedCount === totalLessons && totalLessons > 0) {
+      enrollment.completedAt = new Date();
+    }
+    // Save user
+    await req.user.save();
+    res.json({
+      success: true,
+      message: "Tiến độ đã được cập nhật",
+      progress: enrollment.progress,
+    });
+  } catch (error) {
+    console.error("Update progress error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật tiến độ",
+    });
+  }
+});
 
 // Get user's enrolled courses
 router.get("/my-courses", auth, async (req, res) => {
   try {
     const { status = "all", page = 1, limit = 10 } = req.query;
-
-    let query = { userId: req.user._id };
-
+    // Check if user can access this information
+    if (req.user._id.toString() !== userId && !req.user.hasPermission("staff")) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền truy cập thông tin này",
+      });
+    }
+    console.log("Fetching enrolled courses for userId:", userId);
+    const user = await User.findById(userId).populate({
+      path: "courseHistory.courseId",
+      select: "title description thumbnail category level duration ratings modules",
+    });
+    if (!user) {
+      console.error("User not found for userId:", userId);
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+    let courseHistory = user.courseHistory;
+    console.log("courseHistory after population:", JSON.stringify(courseHistory, null, 2));
+    // Filter out entries with missing courseId (e.g., deleted courses)
+    courseHistory = courseHistory.filter(entry => entry.courseId);
+    console.log("courseHistory after filtering null courseId:", JSON.stringify(courseHistory, null, 2));
     // Filter by status
     if (status === "completed") {
       query.status = "completed";
     } else if (status === "in_progress") {
-      query.status = "in_progress";
-    } else if (status === "enrolled") {
-      query.status = "enrolled";
+      courseHistory = courseHistory.filter(course => !course.completedAt && (course.progress?.percent > 0));
+    } else if (status === "not_started") {
+      courseHistory = courseHistory.filter(course => (course.progress?.percent || 0) === 0);
     }
-
     // Pagination
     const skip = (page - 1) * limit;
-
-    const enrollments = await UserProgress.find(query)
-      .populate(
-        "courseId",
-        "title description thumbnail category level duration ratings"
-      )
-      .sort({ lastAccessedAt: -1 })
-      .limit(parseInt(limit))
-      .skip(skip);
-
-    const total = await UserProgress.countDocuments(query);
-
+    const paginatedCourses = courseHistory.slice(skip, skip + parseInt(limit));
+    // Return progress.completedLessons and percent for each course
+    const data = paginatedCourses.map(enrollment => ({
+      ...enrollment.toObject ? enrollment.toObject() : enrollment,
+      progress: enrollment.progress || { completedLessons: [], percent: 0 },
+    }));
     res.json({
       success: true,
-      data: enrollments,
+      data,
       pagination: {
         current: parseInt(page),
         total: Math.ceil(total / limit),
@@ -529,10 +599,11 @@ router.get("/my-courses", auth, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get my courses error:", error);
+    console.error("Get enrolled courses error:", error, error?.stack);
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy danh sách khóa học đã đăng ký",
+      error: error?.message,
     });
   }
 });

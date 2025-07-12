@@ -30,6 +30,7 @@ import Users from "./pages/admin/Users";
 import AdminCourses from "./pages/admin/AdminCourses";
 import CourseForm from "./pages/admin/CourseForm";
 import Blogs from "./pages/admin/Blogs";
+import Lesson from "./pages/courses/Lesson";
 import "./App.css";
 
 function App() {
@@ -195,6 +196,11 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/appointments" element={<Appointments />} />
+              <Route path="/appointments/book" element={<AppointmentBooking />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
 
               {/* 404 Page */}
               <Route path="*" element={<NotFound />} />
