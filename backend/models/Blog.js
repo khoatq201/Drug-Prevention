@@ -66,7 +66,7 @@ const blogSchema = new mongoose.Schema(
         enum: ["student", "university_student", "parent", "teacher", "counselor", "general"],
       },
     ],
-    language: {
+    lang: {
       type: String,
       enum: ["vi", "en"],
       default: "vi",

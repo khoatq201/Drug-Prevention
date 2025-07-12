@@ -103,7 +103,9 @@ const Dashboard = () => {
 
   const fetchEnrolledCourses = async () => {
     try {
-      const response = await api.get("/courses/my-courses?limit=3");
+      debugger
+      const response = await api.get(`/courses/user/${user?._id}/enrolled`);
+      console.log('Enrolled courses response:', response.data);
       if (response.data.success) {
         setEnrolledCourses(response.data.data || []);
       }
@@ -241,7 +243,7 @@ const Dashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Khóa học</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {stats.coursesCompleted}/{stats.coursesEnrolled}
+                  {enrolledCourses.length}
                 </p>
               </div>
             </div>
@@ -360,7 +362,12 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {enrolledCourses.map((enrollment) => {
                       const course = enrollment.courseId || enrollment;
-                      const progress = enrollment.progress || 0;
+                      // Flatten all lessons from all modules
+                      const allLessons = course.modules?.flatMap(m => m.lessons || []) || [];
+                      const completedLessons = enrollment.progress?.completedLessons || [];
+                      const progress = allLessons.length > 0
+                        ? Math.round((completedLessons.length / allLessons.length) * 100)
+                        : 0;
                       return (
                         <div key={course._id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-start justify-between mb-3">
@@ -368,7 +375,7 @@ const Dashboard = () => {
                               <h3 className="font-medium text-gray-900">{course.title}</h3>
                               <p className="text-sm text-gray-600 mt-1">{course.description}</p>
                             </div>
-                            {enrollment.completedAt ? (
+                            {progress === 100 ? (
                               <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                                 <CheckCircleIcon className="w-3 h-3 mr-1" />
                                 Hoàn thành
@@ -398,7 +405,7 @@ const Dashboard = () => {
                             to={`/courses/${course._id}`}
                             className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
                           >
-                            {enrollment.completedAt ? 'Xem lại' : 'Tiếp tục học'}
+                            {progress === 100 ? 'Xem lại' : 'Tiếp tục học'}
                             <ArrowRightIcon className="w-4 h-4 ml-1" />
                           </Link>
                         </div>
@@ -434,22 +441,22 @@ const Dashboard = () => {
               </div>
               
               <div className="p-6 space-y-3">
-                <Link to="/assessments" className="quick-action-btn">
+                <Link to="/assessments" className="quick-action-btn flex items-center">
                   <ClipboardDocumentListIcon className="w-5 h-5 mr-3" />
                   Làm bài đánh giá
                 </Link>
                 
-                <Link to="/courses" className="quick-action-btn">
+                <Link to="/courses" className="quick-action-btn flex items-center">
                   <AcademicCapIcon className="w-5 h-5 mr-3" />
                   Tham gia khóa học
                 </Link>
                 
-                <Link to="/appointments/book" className="quick-action-btn">
+                <Link to="/appointments/book" className="quick-action-btn flex items-center">
                   <CalendarDaysIcon className="w-5 h-5 mr-3" />
                   Đặt lịch tư vấn
                 </Link>
                 
-                <Link to="/programs" className="quick-action-btn">
+                <Link to="/programs" className="quick-action-btn flex items-center">
                   <UserGroupIcon className="w-5 h-5 mr-3" />
                   Tham gia chương trình
                 </Link>

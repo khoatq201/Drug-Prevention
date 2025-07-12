@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const Course = require("../models/Course");
 const Lesson = require("../models/Lesson");
@@ -21,6 +22,7 @@ router.get("/", async (req, res) => {
     } = req.query;
 
     let query = {
+      status: "active",
       isPublished: true,
       "enrollment.isOpen": true,
     };
@@ -89,12 +91,12 @@ router.get("/", async (req, res) => {
 router.get("/categories", async (req, res) => {
   try {
     const { ageGroup } = req.query;
-    
+
     let matchConditions = {
       isPublished: true,
       "enrollment.isOpen": true,
     };
-    
+
     if (ageGroup) {
       matchConditions.targetAgeGroup = ageGroup;
     } else if (req.user && req.user.ageGroup) {
@@ -264,10 +266,54 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// Get course enrollment details
+router.get("/:id/enrollment", auth, async (req, res) => {
+  console.log("Reached /:id/enrollment endpoint with courseId:", req.params.id);
+  try {
+    const courseId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID khóa học không hợp lệ",
+      });
+    }
+    const enrollment = req.user.courseHistory.find(
+      (enroll) => enroll.courseId.toString() === courseId
+    );
+    if (!userProgress) {
+      return res.status(404).json({
+        success: false,
+        message: "Bạn chưa đăng ký khóa học này",
+      });
+    }
+    // Return progress.completedLessons and percent
+    res.json({
+      success: true,
+      data: {
+        ...enrollment.toObject ? enrollment.toObject() : enrollment,
+        progress: enrollment.progress || { completedLessons: [], percent: 0 },
+      },
+    });
+  } catch (error) {
+    console.error("Get enrollment error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thông tin đăng ký khóa học",
+    });
+  }
+});
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    const { includeArchived } = req.query;
+    let query = { _id: req.params.id };
+    
+    // Only include archived courses if admin and explicitly requested
+    if (!(req.user && req.user.hasPermission("admin") && includeArchived === "true")) {
+      query.status = "active";
+    }
+
+    const course = await Course.findOne(query);
 
     if (!course) {
       return res.status(404).json({
@@ -276,7 +322,7 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    if (!course.isPublished) {
+    if (!course.isPublished && !(req.user && req.user.hasPermission("admin"))) {
       return res.status(404).json({
         success: false,
         message: "Khóa học chưa được xuất bản",
@@ -292,35 +338,64 @@ router.get("/:id", async (req, res) => {
     }
 
     // Get lessons for this course
-    const lessons = await Lesson.find({ 
-      courseId: course._id, 
-      isPublished: true 
-    }).sort({ order: 1 }).select("-content -instructorNotes");
+    let lessonQuery = {
+      courseId: course._id,
+      status: "active",
+      isPublished: true,
+    };
     
+    // Include archived lessons if admin and explicitly requested
+    if (req.user && req.user.hasPermission("admin") && includeArchived === "true") {
+      delete lessonQuery.status;
+    }
+
+    const lessons = await Lesson.find(lessonQuery)
+      .sort({ order: 1 })
+      .select("-content -instructorNotes");
+
     let courseData = course.toObject();
     courseData.lessons = lessons;
-    
+
     let userProgress = null;
     if (!req.user) {
-      // For non-authenticated users, only show preview lessons
-      courseData.lessons = lessons.filter(lesson => lesson.isPreview);
+      // For non-authenticated users, only show basic info
+      courseData.modules = courseData.modules.map(module => ({
+        ...module,
+        lessons: module.lessons.map(lesson => ({
+          _id: lesson._id,
+          title: lesson.title,
+          type: lesson.type,
+          duration: lesson.duration,
+          order: lesson.order,
+          content: lesson.content,
+          videoUrl: lesson.videoUrl,
+          resources: lesson.resources,
+        })),
+        quiz: undefined,
+      }));
     } else {
       // Get user progress
-      userProgress = await UserProgress.findByUserAndCourse(req.user._id, course._id);
+      userProgress = await UserProgress.findByUserAndCourse(
+        req.user._id,
+        course._id
+      );
       
-      if (userProgress) {
-        // User is enrolled, show all lessons with accessibility info
-        courseData.lessons = lessons.map(lesson => {
-          const lessonObj = lesson.toObject();
-          lessonObj.isAccessible = lesson.isAccessibleForUser(userProgress);
-          lessonObj.isCompleted = userProgress.completedLessons?.some(
-            completed => completed.lessonId.toString() === lesson._id.toString()
-          ) || false;
-          return lessonObj;
-        });
-      } else {
-        // User not enrolled, show only preview lessons
-        courseData.lessons = lessons.filter(lesson => lesson.isPreview);
+      if (!userEnrolled) {
+        // Show preview content only
+        courseData.modules = courseData.modules.map(module => ({
+          ...module,
+          lessons: module.lessons.map((lesson, index) => ({
+            _id: lesson._id,
+            title: lesson.title,
+            type: lesson.type,
+            duration: lesson.duration,
+            order: lesson.order,
+            content: index === 0 ? lesson.content : "Nội dung khóa học. Đăng ký để xem chi tiết.",
+            videoUrl: lesson.videoUrl,
+            resources: lesson.resources,
+          })),
+          quiz: undefined,
+        }));
       }
     }
 
@@ -329,13 +404,15 @@ router.get("/:id", async (req, res) => {
       data: courseData,
       canEnroll: course.canEnroll(),
       userEnrolled: !!userProgress,
-      userProgress: userProgress ? {
-        progress: userProgress.overallProgress,
-        status: userProgress.status,
-        currentLesson: userProgress.currentLesson,
-        completedLessons: userProgress.completedLessons.length,
-        totalLessons: lessons.length,
-      } : null,
+      userProgress: userProgress
+        ? {
+            progress: userProgress.overallProgress,
+            status: userProgress.status,
+            currentLesson: userProgress.currentLesson,
+            completedLessons: userProgress.completedLessons.length,
+            totalLessons: lessons.length,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Get course error:", error);
@@ -375,7 +452,10 @@ router.post("/:id/enroll", auth, async (req, res) => {
     }
 
     // Check if user is already enrolled
-    const existingProgress = await UserProgress.findByUserAndCourse(req.user._id, course._id);
+    const existingProgress = await UserProgress.findByUserAndCourse(
+      req.user._id,
+      course._id
+    );
 
     if (existingProgress) {
       return res.status(400).json({
@@ -390,7 +470,7 @@ router.post("/:id/enroll", auth, async (req, res) => {
       courseId: course._id,
       status: "enrolled",
     });
-    
+
     await userProgress.save();
 
     // Update course enrollment count
@@ -412,20 +492,54 @@ router.post("/:id/enroll", auth, async (req, res) => {
   }
 });
 
-// Get user's enrollment status
-router.get("/:id/enrollment", auth, async (req, res) => {
+// Update course progress
+router.put("/:id/progress", auth, async (req, res) => {
   try {
-    const userProgress = await UserProgress.findByUserAndCourse(req.user._id, req.params.id);
-
+    const { lessonId } = req.body;
+    const course = await Course.findById(req.params.id);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khóa học",
+      });
+    }
+    // Check if user is enrolled
+    const enrollment = req.user.courseHistory.find(
+      (enrollment) => enrollment.courseId.toString() === course._id.toString()
+    );
+    if (!enrollment) {
+      return res.status(400).json({
+        success: false,
+        message: "Bạn chưa đăng ký khóa học này",
+      });
+    }
+    // Add lessonId to completedLessons if not already present
+    if (!enrollment.progress) enrollment.progress = { completedLessons: [], percent: 0 };
+    if (!enrollment.progress.completedLessons) enrollment.progress.completedLessons = [];
+    if (!enrollment.progress.completedLessons.includes(lessonId)) {
+      enrollment.progress.completedLessons.push(lessonId);
+    }
+    enrollment.progress.lastLesson = lessonId;
+    // Calculate percent progress
+    const totalLessons = course.modules.reduce((sum, m) => sum + (m.lessons?.length || 0), 0);
+    const completedCount = enrollment.progress.completedLessons.length;
+    enrollment.progress.percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+    // Mark completedAt if all lessons done
+    if (completedCount === totalLessons && totalLessons > 0) {
+      enrollment.completedAt = new Date();
+    }
+    // Save user
+    await req.user.save();
     res.json({
       success: true,
-      data: userProgress,
+      message: "Tiến độ đã được cập nhật",
+      progress: enrollment.progress,
     });
   } catch (error) {
-    console.error("Get enrollment error:", error);
+    console.error("Update progress error:", error);
     res.status(500).json({
       success: false,
-      message: "Lỗi khi lấy thông tin đăng ký",
+      message: "Lỗi khi cập nhật tiến độ",
     });
   }
 });
@@ -434,32 +548,49 @@ router.get("/:id/enrollment", auth, async (req, res) => {
 router.get("/my-courses", auth, async (req, res) => {
   try {
     const { status = "all", page = 1, limit = 10 } = req.query;
-
-    let query = { userId: req.user._id };
-
+    // Check if user can access this information
+    if (req.user._id.toString() !== userId && !req.user.hasPermission("staff")) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền truy cập thông tin này",
+      });
+    }
+    console.log("Fetching enrolled courses for userId:", userId);
+    const user = await User.findById(userId).populate({
+      path: "courseHistory.courseId",
+      select: "title description thumbnail category level duration ratings modules",
+    });
+    if (!user) {
+      console.error("User not found for userId:", userId);
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+    let courseHistory = user.courseHistory;
+    console.log("courseHistory after population:", JSON.stringify(courseHistory, null, 2));
+    // Filter out entries with missing courseId (e.g., deleted courses)
+    courseHistory = courseHistory.filter(entry => entry.courseId);
+    console.log("courseHistory after filtering null courseId:", JSON.stringify(courseHistory, null, 2));
     // Filter by status
     if (status === "completed") {
       query.status = "completed";
     } else if (status === "in_progress") {
-      query.status = "in_progress";
-    } else if (status === "enrolled") {
-      query.status = "enrolled";
+      courseHistory = courseHistory.filter(course => !course.completedAt && (course.progress?.percent > 0));
+    } else if (status === "not_started") {
+      courseHistory = courseHistory.filter(course => (course.progress?.percent || 0) === 0);
     }
-
     // Pagination
     const skip = (page - 1) * limit;
-    
-    const enrollments = await UserProgress.find(query)
-      .populate("courseId", "title description thumbnail category level duration ratings")
-      .sort({ lastAccessedAt: -1 })
-      .limit(parseInt(limit))
-      .skip(skip);
-    
-    const total = await UserProgress.countDocuments(query);
-
+    const paginatedCourses = courseHistory.slice(skip, skip + parseInt(limit));
+    // Return progress.completedLessons and percent for each course
+    const data = paginatedCourses.map(enrollment => ({
+      ...enrollment.toObject ? enrollment.toObject() : enrollment,
+      progress: enrollment.progress || { completedLessons: [], percent: 0 },
+    }));
     res.json({
       success: true,
-      data: enrollments,
+      data,
       pagination: {
         current: parseInt(page),
         total: Math.ceil(total / limit),
@@ -468,10 +599,11 @@ router.get("/my-courses", auth, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get my courses error:", error);
+    console.error("Get enrolled courses error:", error, error?.stack);
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy danh sách khóa học đã đăng ký",
+      error: error?.message,
     });
   }
 });
@@ -507,16 +639,15 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const updateData = { ...req.body };
     updateData.lastModifiedBy = req.user._id;
-    
+
     if (req.body.isPublished && !req.body.publishedAt) {
       updateData.publishedAt = new Date();
     }
 
-    const course = await Course.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const course = await Course.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!course) {
       return res.status(404).json({
@@ -545,7 +676,7 @@ router.delete("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const course = await Course.findByIdAndUpdate(
       req.params.id,
-      { isPublished: false, "enrollment.isOpen": false },
+      { status: "archived", isPublished: false, "enrollment.isOpen": false },
       { new: true }
     );
 
@@ -558,7 +689,7 @@ router.delete("/:id", auth, authorize("admin"), async (req, res) => {
 
     res.json({
       success: true,
-      message: "Khóa học đã được xóa thành công",
+      message: "Khóa học đã được xóa mềm (archived)",
     });
   } catch (error) {
     console.error("Delete course error:", error);
@@ -575,7 +706,7 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const { category, ageGroup, startDate, endDate } = req.query;
 
     let matchConditions = { isPublished: true };
-    
+
     if (category) matchConditions.category = category;
     if (ageGroup) matchConditions.targetAgeGroup = ageGroup;
     if (startDate && endDate) {
@@ -611,7 +742,9 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     const totalCourses = await Course.countDocuments(matchConditions);
     const totalEnrollments = await Course.aggregate([
       { $match: matchConditions },
-      { $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } } },
+      {
+        $group: { _id: null, total: { $sum: "$enrollment.currentEnrollment" } },
+      },
     ]);
 
     res.json({
@@ -627,6 +760,211 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy thống kê khóa học",
+    });
+  }
+});
+
+// Admin: Get all courses with admin filters
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      category,
+      level,
+      isPublished,
+      search,
+      page = 1,
+      limit = 20,
+      sort = "-createdAt",
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (category) query.category = category;
+    if (level) query.level = level;
+    if (isPublished !== undefined && isPublished !== "") {
+      query.isPublished = isPublished === "true";
+    }
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "category":
+        sortOptions = { category: 1 };
+        break;
+      case "level":
+        sortOptions = { level: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const courses = await Course.find(query)
+      .select("-modules.quiz")
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Course.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: courses,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: courses.length,
+        totalResults: total,
+      },
+      filters: {
+        category,
+        level,
+        isPublished,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Get admin courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách khóa học",
+    });
+  }
+});
+
+// Get all courses including archived (admin only)
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      level,
+      ageGroup,
+      language,
+      sort = "-createdAt",
+      page = 1,
+      limit = 20,
+      search,
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (status) query.status = status;
+    if (category) query.category = category;
+    if (level) query.level = level;
+    if (ageGroup) query.targetAgeGroup = ageGroup;
+    if (language) query.language = language;
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "category":
+        sortOptions = { category: 1 };
+        break;
+      case "level":
+        sortOptions = { level: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const courses = await Course.find(query)
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Course.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: courses,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: courses.length,
+        totalResults: total,
+      },
+      filters: {
+        status,
+        category,
+        level,
+        ageGroup,
+        language,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Get all courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách khóa học",
+    });
+  }
+});
+
+// Restore archived course (admin only)
+router.patch("/:id/restore", auth, authorize("admin"), async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { status: "active" },
+      { new: true }
+    );
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khóa học",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Khóa học đã được khôi phục thành công",
+      data: course,
+    });
+  } catch (error) {
+    console.error("Restore course error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi khôi phục khóa học",
     });
   }
 });

@@ -52,10 +52,19 @@ const CourseDetail = () => {
   };
 
   const fetchEnrollment = async () => {
+    debugger
     try {
-      const response = await api.get(`/courses/${id}/enrollment`);
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/courses/${id}/enrollment`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.data.success) {
         setEnrollment(response.data.data);
+      }
+      if (enrollment.status === "enrolled") {
+        setEnrolling(true);
       }
     } catch (error) {
       // Not enrolled yet, which is fine
@@ -87,6 +96,10 @@ const CourseDetail = () => {
   const handleStartLessson = (lessonId) => {
     if (!enrollment) {
       toast.error("Vui lòng đăng ký khóa học trước");
+      return;
+    }
+    if (!lessonId) {
+      toast.error("Không tìm thấy bài học!");
       return;
     }
     navigate(`/courses/${id}/lessons/${lessonId}`);
@@ -130,17 +143,25 @@ const CourseDetail = () => {
   const isLessonAccessible = (lesson, index) => {
     if (!enrollment) return false;
     if (index === 0) return true; // First lesson is always accessible
-    
-    // Check if previous lessons are completed
+
+    // Flatten all lessons
+    const allLessons = course.modules?.flatMap(m => m.lessons || []) || [];
     const completedLessons = enrollment.progress?.completedLessons || [];
-    const previousLessonId = course.lessons[index - 1]._id;
+    const previousLessonId = allLessons[index - 1] && (
+      typeof allLessons[index - 1]._id === "string"
+        ? allLessons[index - 1]._id
+        : allLessons[index - 1]._id?.$oid
+    );
     return completedLessons.includes(previousLessonId);
   };
 
   const getProgress = () => {
-    if (!enrollment || !course?.lessons?.length) return 0;
+    if (!enrollment || !course?.modules) return 0;
+    const allLessons = course.modules.flatMap(m => m.lessons || []);
     const completedLessons = enrollment.progress?.completedLessons || [];
-    return Math.round((completedLessons.length / course.lessons.length) * 100);
+    return allLessons.length > 0
+      ? Math.round((completedLessons.length / allLessons.length) * 100)
+      : 0;
   };
 
   if (loading) {
@@ -159,7 +180,10 @@ const CourseDetail = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               Không tìm thấy khóa học
             </h1>
-            <button onClick={() => navigate("/courses")} className="btn-primary">
+            <button
+              onClick={() => navigate("/courses")}
+              className="btn-primary"
+            >
               Quay lại danh sách khóa học
             </button>
           </div>
@@ -169,7 +193,7 @@ const CourseDetail = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gray-50 py-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -190,7 +214,7 @@ const CourseDetail = () => {
           {/* Main Content */}
           <div className="lg:col-span-2">
             {/* Course Header */}
-            <motion.div 
+            <motion.div
               className="bg-white rounded-lg shadow-md overflow-hidden mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -204,16 +228,19 @@ const CourseDetail = () => {
                   />
                 </div>
               )}
-              
+
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelStyle(course.level)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelStyle(course.level)}`}
+                  >
                     {getLevelText(course.level)}
                   </span>
                   <div className="flex items-center text-yellow-500">
                     <StarIcon className="w-5 h-5 fill-current" />
                     <span className="ml-1 text-sm text-gray-600">
-                      {course.rating || "4.5"} ({course.reviewCount || 0} đánh giá)
+                      {course.rating || "4.5"} ({course.reviewCount || 0} đánh
+                      giá)
                     </span>
                   </div>
                 </div>
@@ -221,7 +248,7 @@ const CourseDetail = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
                   {course.title}
                 </h1>
-                
+
                 <p className="text-gray-600 text-lg mb-6">
                   {course.description}
                 </p>
@@ -233,7 +260,16 @@ const CourseDetail = () => {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <BookOpenIcon className="w-5 h-5 mr-2" />
-                    <span>{course.lessons?.length || 0} bài học</span>
+                    <span>
+                      {course.modules
+                        ? course.modules.reduce(
+                            (total, module) =>
+                              total + (module.lessons?.length || 0),
+                            0
+                          )
+                        : 0}{" "}
+                      bài học
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <UserGroupIcon className="w-5 h-5 mr-2" />
@@ -252,7 +288,7 @@ const CourseDetail = () => {
                       <span>{getProgress()}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <motion.div 
+                      <motion.div
                         className="bg-green-600 h-2 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${getProgress()}%` }}
@@ -265,7 +301,7 @@ const CourseDetail = () => {
             </motion.div>
 
             {/* Tabs */}
-            <motion.div 
+            <motion.div
               className="bg-white rounded-lg shadow-md"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -274,9 +310,17 @@ const CourseDetail = () => {
               <div className="border-b border-gray-200">
                 <nav className="flex space-x-8 px-6">
                   {[
-                    { id: "overview", label: "Tổng quan", icon: DocumentTextIcon },
+                    {
+                      id: "overview",
+                      label: "Tổng quan",
+                      icon: DocumentTextIcon,
+                    },
                     { id: "curriculum", label: "Nội dung", icon: BookOpenIcon },
-                    { id: "reviews", label: "Đánh giá", icon: ChatBubbleLeftEllipsisIcon },
+                    {
+                      id: "reviews",
+                      label: "Đánh giá",
+                      icon: ChatBubbleLeftEllipsisIcon,
+                    },
                   ].map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -308,7 +352,7 @@ const CourseDetail = () => {
                         {course.fullDescription || course.description}
                       </div>
                     </div>
-                    
+
                     {course.objectives && (
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -348,61 +392,99 @@ const CourseDetail = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       Nội dung khóa học
                     </h3>
-                    <div className="space-y-3">
-                      {course.lessons?.map((lesson, index) => {
-                        const isAccessible = isLessonAccessible(lesson, index);
-                        const isCompleted = enrollment?.progress?.completedLessons?.includes(lesson._id);
-                        
-                        return (
-                          <motion.div
-                            key={lesson._id}
-                            className={`border rounded-lg p-4 transition-colors ${
-                              isAccessible ? "border-gray-200 hover:border-green-300" : "border-gray-100 bg-gray-50"
-                            }`}
-                            whileHover={isAccessible ? { scale: 1.01 } : {}}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center flex-1">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                                  isCompleted ? "bg-green-500" : isAccessible ? "bg-blue-500" : "bg-gray-300"
-                                }`}>
-                                  {isCompleted ? (
-                                    <CheckCircleIcon className="w-5 h-5 text-white" />
-                                  ) : isAccessible ? (
-                                    <PlayIcon className="w-4 h-4 text-white" />
-                                  ) : (
-                                    <LockClosedIcon className="w-4 h-4 text-gray-500" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <h4 className={`font-medium ${
-                                    isAccessible ? "text-gray-900" : "text-gray-500"
-                                  }`}>
-                                    {lesson.title}
-                                  </h4>
-                                  <p className={`text-sm ${
-                                    isAccessible ? "text-gray-600" : "text-gray-400"
-                                  }`}>
-                                    {lesson.description}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-500 mr-4">
-                                <ClockIcon className="w-4 h-4 mr-1" />
-                                <span>{formatDuration(lesson.duration)}</span>
-                              </div>
-                              {isAccessible && (
-                                <button
-                                  onClick={() => handleStartLessson(lesson._id)}
-                                  className="btn-outline text-sm"
+                    <div className="space-y-6">
+                      {course.modules?.map((module, moduleIdx) => (
+                        <div key={module._id || moduleIdx}>
+                          <h4 className="font-semibold text-gray-800 mb-2">
+                            {module.title}
+                          </h4>
+                          <div className="space-y-3">
+                            {module.lessons?.map((lesson, lessonIdx) => {
+                              const index = lessonIdx; // You may want to use a global index if needed
+                              const isAccessible = isLessonAccessible(
+                                lesson,
+                                index
+                              );
+                              const isCompleted =
+                                enrollment?.progress?.completedLessons?.includes(
+                                  lesson._id
+                                );
+
+                              return (
+                                <motion.div
+                                  key={lesson._id}
+                                  className={`border rounded-lg p-4 transition-colors ${
+                                    isAccessible
+                                      ? "border-gray-200 hover:border-green-300"
+                                      : "border-gray-100 bg-gray-50"
+                                  }`}
+                                  whileHover={
+                                    isAccessible ? { scale: 1.01 } : {}
+                                  }
                                 >
-                                  {isCompleted ? "Xem lại" : "Bắt đầu"}
-                                </button>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center flex-1">
+                                      <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                          isCompleted
+                                            ? "bg-green-500"
+                                            : isAccessible
+                                              ? "bg-blue-500"
+                                              : "bg-gray-300"
+                                        }`}
+                                      >
+                                        {isCompleted ? (
+                                          <CheckCircleIcon className="w-5 h-5 text-white" />
+                                        ) : isAccessible ? (
+                                          <PlayIcon className="w-4 h-4 text-white" />
+                                        ) : (
+                                          <LockClosedIcon className="w-4 h-4 text-gray-500" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <h4
+                                          className={`font-medium ${
+                                            isAccessible
+                                              ? "text-gray-900"
+                                              : "text-gray-500"
+                                          }`}
+                                        >
+                                          {lesson.title}
+                                        </h4>
+                                        <p
+                                          className={`text-sm ${
+                                            isAccessible
+                                              ? "text-gray-600"
+                                              : "text-gray-400"
+                                          }`}
+                                        >
+                                          {lesson.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-500 mr-4">
+                                      <ClockIcon className="w-4 h-4 mr-1" />
+                                      <span>
+                                        {formatDuration(lesson.duration)}
+                                      </span>
+                                    </div>
+                                    {isAccessible && (
+                                      <button
+                                        onClick={() =>
+                                          handleStartLessson(lesson._id)
+                                        }
+                                        className="btn-outline text-sm"
+                                      >
+                                        {isCompleted ? "Xem lại" : "Bắt đầu"}
+                                      </button>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -422,7 +504,7 @@ const CourseDetail = () => {
           </div>
 
           {/* Sidebar */}
-          <motion.div 
+          <motion.div
             className="space-y-6"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -432,9 +514,9 @@ const CourseDetail = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="text-center mb-6">
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {course.price === 0 ? "Miễn phí" : `${course.price?.toLocaleString()}đ`}
+                  {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
                 </div>
-                {course.originalPrice && course.originalPrice > course.price && (
+                {course.originalPrice && course.originalPrice > course.pricing.price && (
                   <div className="text-sm text-gray-500 line-through">
                     {course.originalPrice.toLocaleString()}đ
                   </div>
@@ -446,21 +528,24 @@ const CourseDetail = () => {
                   <div className="text-center text-green-600 font-medium">
                     ✓ Đã đăng ký
                   </div>
-                  
-                  {course.lessons?.length > 0 && (
+                  {course.modules && course.modules.length > 0 && (
                     <button
                       onClick={() => {
-                        const firstAccessibleLesson = course.lessons.find((lesson, index) => 
-                          isLessonAccessible(lesson, index)
-                        );
-                        if (firstAccessibleLesson) {
-                          handleStartLessson(firstAccessibleLesson._id);
+                        // Flatten all lessons and go to the first one
+                        const allLessons = course.modules.flatMap(m => m.lessons || []);
+                        const firstLesson = allLessons[0];
+                        const lessonId = firstLesson && (typeof firstLesson._id === "string" ? firstLesson._id : firstLesson._id?.$oid);
+                        if (lessonId) {
+                          handleStartLessson(lessonId);
+                        } else {
+                          toast.error("Không tìm thấy bài học đầu tiên!");
+                          console.error("No valid lessonId for first lesson", firstLesson);
                         }
                       }}
                       className="w-full btn-primary"
                     >
                       <PlayIcon className="w-4 h-4 mr-2" />
-                      Tiếp tục học
+                      Học Ngay!
                     </button>
                   )}
                 </div>
@@ -494,15 +579,21 @@ const CourseDetail = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Thời lượng:</span>
-                  <span className="font-medium">{formatDuration(course.duration)}</span>
+                  <span className="font-medium">
+                    {formatDuration(course.duration)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số bài học:</span>
-                  <span className="font-medium">{course.lessons?.length || 0}</span>
+                  <span className="font-medium">
+                    {course.modules?.lessons?.length || 0}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Cấp độ:</span>
-                  <span className="font-medium">{getLevelText(course.level)}</span>
+                  <span className="font-medium">
+                    {getLevelText(course.level)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Ngôn ngữ:</span>
@@ -510,7 +601,9 @@ const CourseDetail = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Học viên:</span>
-                  <span className="font-medium">{course.enrollmentCount || 0}</span>
+                  <span className="font-medium">
+                    {course.enrollmentCount || 0}
+                  </span>
                 </div>
               </div>
             </div>

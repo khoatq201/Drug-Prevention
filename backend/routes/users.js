@@ -26,7 +26,7 @@ router.get("/", auth, authorize("manager"), async (req, res) => {
     // Apply filters
     if (role) query.role = role;
     if (ageGroup) query.ageGroup = ageGroup;
-    if (isActive !== undefined) query.isActive = isActive === "true";
+    if (isActive !== undefined && isActive !== "") query.isActive = isActive === "true";
 
     // Search functionality
     if (search) {
@@ -640,6 +640,471 @@ router.get("/stats/overview", auth, authorize("manager"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy thống kê người dùng",
+    });
+  }
+});
+
+// ==================== ADMIN CRUD ROUTES ====================
+
+// @route   GET /api/users/admin/all
+// @desc    Get all users for admin (with pagination and filtering)
+// @access  Private (Admin only)
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      role,
+      ageGroup,
+      isActive,
+      isEmailVerified,
+      search,
+      page = 1,
+      limit = 20,
+      sort = "-createdAt",
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (role) query.role = role;
+    if (ageGroup) query.ageGroup = ageGroup;
+    if (isActive !== undefined && isActive !== "") query.isActive = isActive === "true";
+    if (isEmailVerified !== undefined && isEmailVerified !== "") query.isEmailVerified = isEmailVerified === "true";
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "name":
+        sortOptions = { firstName: 1, lastName: 1 };
+        break;
+      case "email":
+        sortOptions = { email: 1 };
+        break;
+      case "role":
+        sortOptions = { role: 1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      case "lastLogin":
+        sortOptions = { lastLogin: -1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const users = await User.find(query)
+      .select("-password")
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await User.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: users,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: users.length,
+        totalResults: total,
+      },
+      filters: {
+        role,
+        ageGroup,
+        isActive,
+        isEmailVerified,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Admin get users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách người dùng",
+    });
+  }
+});
+
+// @route   POST /api/users/admin/create
+// @desc    Create new user (Admin only)
+// @access  Private (Admin only)
+router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      dateOfBirth,
+      gender,
+      role,
+      ageGroup,
+      isActive,
+      isEmailVerified,
+    } = req.body;
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã tồn tại trong hệ thống",
+      });
+    }
+
+    // Create user object
+    const userData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender,
+      role: role || "member",
+      ageGroup,
+      isActive: isActive !== undefined ? isActive : true,
+      isEmailVerified: isEmailVerified !== undefined ? isEmailVerified : false,
+    };
+
+    // Add password if provided
+    if (password) {
+      userData.password = password;
+    }
+
+    const user = new User(userData);
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo người dùng thành công",
+      data: userResponse,
+    });
+  } catch (error) {
+    console.error("Admin create user error:", error);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors,
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi tạo người dùng",
+    });
+  }
+});
+
+// @route   PUT /api/users/admin/:id
+// @desc    Update user by admin
+// @access  Private (Admin only)
+router.put("/admin/:id", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      dateOfBirth,
+      gender,
+      role,
+      ageGroup,
+      isActive,
+      isEmailVerified,
+    } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Check if email is being changed and if it already exists
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Email đã tồn tại trong hệ thống",
+        });
+      }
+    }
+
+    // Update fields
+    const updateData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender,
+      role,
+      ageGroup,
+      isActive,
+      isEmailVerified,
+    };
+
+    // Remove undefined fields
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
+    // Handle password update separately
+    if (password) {
+      user.password = password;
+    }
+
+    // Update user
+    Object.assign(user, updateData);
+    await user.save();
+
+    // Return user without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json({
+      success: true,
+      message: "Cập nhật người dùng thành công",
+      data: userResponse,
+    });
+  } catch (error) {
+    console.error("Admin update user error:", error);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors,
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật người dùng",
+    });
+  }
+});
+
+// @route   DELETE /api/users/admin/:id
+// @desc    Delete user by admin (soft delete)
+// @access  Private (Admin only)
+router.delete("/admin/:id", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent admin from deleting themselves
+    if (req.user._id.toString() === id) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa tài khoản của chính mình",
+      });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Soft delete by setting isActive to false
+    user.isActive = false;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Xóa người dùng thành công",
+    });
+  } catch (error) {
+    console.error("Admin delete user error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi xóa người dùng",
+    });
+  }
+});
+
+// @route   POST /api/users/admin/:id/restore
+// @desc    Restore deleted user by admin
+// @access  Private (Admin only)
+router.post("/admin/:id/restore", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy người dùng",
+      });
+    }
+
+    // Restore user by setting isActive to true
+    user.isActive = true;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Khôi phục người dùng thành công",
+    });
+  } catch (error) {
+    console.error("Admin restore user error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi khôi phục người dùng",
+    });
+  }
+});
+
+// @route   GET /api/users/admin/stats
+// @desc    Get user statistics for admin dashboard
+// @access  Private (Admin only)
+router.get("/admin/stats", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let matchConditions = {};
+
+    if (startDate && endDate) {
+      matchConditions.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    const stats = await User.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: null,
+          totalUsers: { $sum: 1 },
+          activeUsers: {
+            $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
+          },
+          verifiedUsers: {
+            $sum: { $cond: [{ $eq: ["$isEmailVerified", true] }, 1, 0] },
+          },
+          newUsersThisMonth: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $gte: ["$createdAt", new Date(new Date().getFullYear(), new Date().getMonth(), 1)] },
+                    { $lte: ["$createdAt", new Date()] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        },
+      },
+      {
+        $project: {
+          totalUsers: 1,
+          activeUsers: 1,
+          verifiedUsers: 1,
+          inactiveUsers: { $subtract: ["$totalUsers", "$activeUsers"] },
+          newUsersThisMonth: 1,
+          verificationRate: {
+            $round: [
+              {
+                $multiply: [
+                  { $divide: ["$verifiedUsers", "$totalUsers"] },
+                  100,
+                ],
+              },
+              2,
+            ],
+          },
+          _id: 0,
+        },
+      },
+    ]);
+
+    const roleStats = await User.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: "$role",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          role: "$_id",
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    const ageGroupStats = await User.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: "$ageGroup",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          ageGroup: "$_id",
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Get recent registrations
+    const recentUsers = await User.find()
+      .select("firstName lastName email role createdAt")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      data: {
+        overview: stats[0] || {},
+        roleBreakdown: roleStats,
+        ageGroupBreakdown: ageGroupStats,
+        recentUsers,
+      },
+    });
+  } catch (error) {
+    console.error("Admin get stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê",
     });
   }
 });

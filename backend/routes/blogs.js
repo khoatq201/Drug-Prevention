@@ -780,4 +780,491 @@ router.get("/stats/overview", auth, authorize("manager"), async (req, res) => {
   }
 });
 
+// ==================== ADMIN CRUD ROUTES ====================
+
+// @route   GET /api/blogs/admin/all
+// @desc    Get all blogs for admin (with pagination and filtering)
+// @access  Private (Admin only)
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      author,
+      featured,
+      language,
+      search,
+      page = 1,
+      limit = 20,
+      sort = "-createdAt",
+    } = req.query;
+
+    let query = {};
+
+    // Apply filters
+    if (status) query.status = status;
+    if (category) query.category = category;
+    if (author) query.author = author;
+    if (featured !== undefined && featured !== "") query["settings.isFeatured"] = featured === "true";
+    if (language) query.language = language;
+
+    // Search functionality
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { excerpt: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Sort options
+    let sortOptions = {};
+    switch (sort) {
+      case "title":
+        sortOptions = { title: 1 };
+        break;
+      case "author":
+        sortOptions = { author: 1 };
+        break;
+      case "category":
+        sortOptions = { category: 1 };
+        break;
+      case "views":
+        sortOptions = { "views.count": -1 };
+        break;
+      case "oldest":
+        sortOptions = { createdAt: 1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    const blogs = await Blog.find(query)
+      .populate("author", "firstName lastName email")
+      .sort(sortOptions)
+      .limit(parseInt(limit))
+      .skip(skip);
+
+    const total = await Blog.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: blogs,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: blogs.length,
+        totalResults: total,
+      },
+      filters: {
+        status,
+        category,
+        author,
+        featured,
+        language,
+        search,
+        sort,
+      },
+    });
+  } catch (error) {
+    console.error("Admin get blogs error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách bài viết",
+    });
+  }
+});
+
+// @route   POST /api/blogs/admin/create
+// @desc    Create new blog (Admin only)
+// @access  Private (Admin only)
+router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      title,
+      excerpt,
+      content,
+      category,
+      tags,
+      targetAudience,
+      language,
+      status,
+      featuredImage,
+      seo,
+      settings,
+      scheduledFor,
+    } = req.body;
+
+    // Generate slug from title
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim("-");
+
+    // Check if slug already exists
+    const existingBlog = await Blog.findOne({ slug });
+    if (existingBlog) {
+      return res.status(400).json({
+        success: false,
+        message: "Slug đã tồn tại, vui lòng thay đổi tiêu đề",
+      });
+    }
+
+    // Create blog object
+    const blogData = {
+      title,
+      slug,
+      excerpt,
+      content,
+      category,
+      tags: tags || [],
+      targetAudience: targetAudience || [],
+      language: language || "vi",
+      status: status || "draft",
+      author: req.user._id,
+      featuredImage,
+      seo,
+      settings: {
+        allowComments: settings?.allowComments !== undefined ? settings.allowComments : true,
+        requireApproval: settings?.requireApproval !== undefined ? settings.requireApproval : false,
+        allowLikes: settings?.allowLikes !== undefined ? settings.allowLikes : true,
+        isFeatured: settings?.isFeatured !== undefined ? settings.isFeatured : false,
+        isPinned: settings?.isPinned !== undefined ? settings.isPinned : false,
+      },
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+    };
+
+    // Set publishedAt if status is published
+    if (status === "published") {
+      blogData.publishedAt = new Date();
+    }
+
+    const blog = new Blog(blogData);
+    await blog.save();
+
+    // Populate author info
+    await blog.populate("author", "firstName lastName email");
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo bài viết thành công",
+      data: blog,
+    });
+  } catch (error) {
+    console.error("Admin create blog error:", error);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors,
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi tạo bài viết",
+    });
+  }
+});
+
+// @route   PUT /api/blogs/admin/:id
+// @desc    Update blog by admin
+// @access  Private (Admin only)
+router.put("/admin/:id", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      excerpt,
+      content,
+      category,
+      tags,
+      targetAudience,
+      language,
+      status,
+      featuredImage,
+      seo,
+      settings,
+      scheduledFor,
+    } = req.body;
+
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    // Generate new slug if title changed
+    let slug = blog.slug;
+    if (title && title !== blog.title) {
+      slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .trim("-");
+
+      // Check if new slug already exists
+      const existingBlog = await Blog.findOne({ slug, _id: { $ne: id } });
+      if (existingBlog) {
+        return res.status(400).json({
+          success: false,
+          message: "Slug đã tồn tại, vui lòng thay đổi tiêu đề",
+        });
+      }
+    }
+
+    // Update fields
+    const updateData = {
+      title,
+      slug,
+      excerpt,
+      content,
+      category,
+      tags,
+      targetAudience,
+      language,
+      status,
+      featuredImage,
+      seo,
+      settings,
+      scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+      lastModifiedBy: req.user._id,
+    };
+
+    // Remove undefined fields
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
+    // Handle status change
+    if (status === "published" && blog.status !== "published") {
+      updateData.publishedAt = new Date();
+    } else if (status !== "published") {
+      updateData.publishedAt = undefined;
+    }
+
+    // Update blog
+    Object.assign(blog, updateData);
+    await blog.save();
+
+    // Populate author info
+    await blog.populate("author", "firstName lastName email");
+
+    res.json({
+      success: true,
+      message: "Cập nhật bài viết thành công",
+      data: blog,
+    });
+  } catch (error) {
+    console.error("Admin update blog error:", error);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors,
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật bài viết",
+    });
+  }
+});
+
+// @route   DELETE /api/blogs/admin/:id
+// @desc    Delete blog by admin (soft delete)
+// @access  Private (Admin only)
+router.delete("/admin/:id", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    // Soft delete by setting status to archived
+    blog.status = "archived";
+    blog.lastModifiedBy = req.user._id;
+    await blog.save();
+
+    res.json({
+      success: true,
+      message: "Xóa bài viết thành công",
+    });
+  } catch (error) {
+    console.error("Admin delete blog error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi xóa bài viết",
+    });
+  }
+});
+
+// @route   POST /api/blogs/admin/:id/restore
+// @desc    Restore deleted blog by admin
+// @access  Private (Admin only)
+router.post("/admin/:id/restore", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy bài viết",
+      });
+    }
+
+    // Restore blog by setting status to draft
+    blog.status = "draft";
+    blog.lastModifiedBy = req.user._id;
+    await blog.save();
+
+    res.json({
+      success: true,
+      message: "Khôi phục bài viết thành công",
+    });
+  } catch (error) {
+    console.error("Admin restore blog error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi khôi phục bài viết",
+    });
+  }
+});
+
+// @route   GET /api/blogs/admin/stats
+// @desc    Get blog statistics for admin dashboard
+// @access  Private (Admin only)
+router.get("/admin/stats", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let matchConditions = {};
+
+    if (startDate && endDate) {
+      matchConditions.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    const stats = await Blog.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: null,
+          totalPosts: { $sum: 1 },
+          publishedPosts: {
+            $sum: { $cond: [{ $eq: ["$status", "published"] }, 1, 0] },
+          },
+          draftPosts: {
+            $sum: { $cond: [{ $eq: ["$status", "draft"] }, 1, 0] },
+          },
+          archivedPosts: {
+            $sum: { $cond: [{ $eq: ["$status", "archived"] }, 1, 0] },
+          },
+          totalViews: { $sum: "$views.count" },
+          totalLikes: { $sum: { $size: "$likes" } },
+          totalComments: { $sum: { $size: "$comments" } },
+          featuredPosts: {
+            $sum: { $cond: [{ $eq: ["$settings.isFeatured", true] }, 1, 0] },
+          },
+        },
+      },
+      {
+        $project: {
+          totalPosts: 1,
+          publishedPosts: 1,
+          draftPosts: 1,
+          archivedPosts: 1,
+          totalViews: 1,
+          totalLikes: 1,
+          totalComments: 1,
+          featuredPosts: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    const categoryStats = await Blog.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+          views: { $sum: "$views.count" },
+          likes: { $sum: { $size: "$likes" } },
+        },
+      },
+      {
+        $project: {
+          category: "$_id",
+          count: 1,
+          views: 1,
+          likes: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    const statusStats = await Blog.aggregate([
+      { $match: matchConditions },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          status: "$_id",
+          count: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    // Get recent posts
+    const recentPosts = await Blog.find()
+      .populate("author", "firstName lastName")
+      .select("title status category createdAt")
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      data: {
+        overview: stats[0] || {},
+        categoryBreakdown: categoryStats,
+        statusBreakdown: statusStats,
+        recentPosts,
+      },
+    });
+  } catch (error) {
+    console.error("Admin get blog stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê",
+    });
+  }
+});
+
 module.exports = router;

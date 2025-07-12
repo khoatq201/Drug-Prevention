@@ -25,6 +25,12 @@ import AppointmentBooking from "./pages/appointments/AppointmentBooking";
 import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
+import Users from "./pages/admin/Users";
+import AdminCourses from "./pages/admin/AdminCourses";
+import CourseForm from "./pages/admin/CourseForm";
+import Blogs from "./pages/admin/Blogs";
+import Lesson from "./pages/courses/Lesson";
 import "./App.css";
 
 function App() {
@@ -142,6 +148,59 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute>
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/courses"
+                element={
+                  <ProtectedRoute>
+                    <AdminCourses />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/courses/new"
+                element={
+                  <ProtectedRoute>
+                    <CourseForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/courses/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <CourseForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/blogs"
+                element={
+                  <ProtectedRoute>
+                    <Blogs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/appointments" element={<Appointments />} />
+              <Route path="/appointments/book" element={<AppointmentBooking />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
 
               {/* 404 Page */}
               <Route path="*" element={<NotFound />} />

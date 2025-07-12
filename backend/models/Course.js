@@ -53,6 +53,11 @@ const courseSchema = new mongoose.Schema(
     previewVideo: {
       type: String, // YouTube URL or direct video URL
     },
+    status: {
+      type: String,
+      enum: ["active", "archived"],
+      default: "active",
+    },
     modules: [
       {
         title: {
@@ -64,6 +69,11 @@ const courseSchema = new mongoose.Schema(
         order: {
           type: Number,
           required: true,
+        },
+        status: {
+          type: String,
+          enum: ["active", "archived"],
+          default: "active",
         },
         quiz: {
           questions: [
@@ -243,17 +253,26 @@ const courseSchema = new mongoose.Schema(
 
 // Virtual for total lessons count (from stats)
 courseSchema.virtual("totalLessons").get(function () {
-  return this.stats.totalLessons || 0;
+  if (!Array.isArray(this.modules)) return 0;
+  return this.modules.reduce(
+    (total, module) => total + (Array.isArray(module.lessons) ? module.lessons.length : 0),
+    0
+  );
 });
 
 // Virtual for estimated completion time (from stats)
 courseSchema.virtual("estimatedTime").get(function () {
-  return this.stats.totalDuration || this.duration;
-});
-
-// Virtual for enrollment count
-courseSchema.virtual("enrollmentCount").get(function () {
-  return this.enrollment.currentEnrollment || 0;
+  if (!Array.isArray(this.modules)) return 0;
+  return this.modules.reduce((total, module) => {
+    return (
+      total +
+      (Array.isArray(module.lessons)
+        ? module.lessons.reduce((moduleTotal, lesson) => {
+            return moduleTotal + (lesson.duration || 0);
+          }, 0)
+        : 0)
+    );
+  }, 0);
 });
 
 // Static method to find courses by age group
@@ -262,6 +281,7 @@ courseSchema.statics.findByAgeGroup = function (ageGroup) {
     targetAgeGroup: ageGroup,
     isPublished: true,
     "enrollment.isOpen": true,
+    status: "active",
   });
 };
 
@@ -270,6 +290,7 @@ courseSchema.statics.searchCourses = function (query, filters = {}) {
   const searchCriteria = {
     isPublished: true,
     "enrollment.isOpen": true,
+    status: "active",
     ...filters,
   };
 
@@ -307,7 +328,7 @@ courseSchema.methods.updateStats = async function () {
   const Lesson = require("./Lesson");
   
   // Get all lessons for this course
-  const lessons = await Lesson.find({ courseId: this._id, isPublished: true });
+  const lessons = await Lesson.find({ courseId: this._id, isPublished: true, status: "active" });
   
   this.stats.totalLessons = lessons.length;
   this.stats.totalDuration = lessons.reduce((total, lesson) => total + (lesson.duration || 0), 0);

@@ -47,14 +47,15 @@ Ma túy không chỉ gây hại cho sức khỏe thể chất mà còn có nhữ
 
 **Lưu ý**: Nếu bạn hoặc người thân đang gặp vấn đề với ma túy, hãy liên hệ ngay với các chuyên gia để được hỗ trợ kịp thời.
     `,
-    excerpt: "Ma túy có những tác động nghiêm trọng đến sức khỏe tâm thần, gây ra nhiều rối loạn tâm lý và hành vi nguy hiểm.",
+    excerpt:
+      "Ma túy có những tác động nghiêm trọng đến sức khỏe tâm thần, gây ra nhiều rối loạn tâm lý và hành vi nguy hiểm.",
     category: "health",
     tags: ["ma túy", "sức khỏe tâm thần", "phòng ngừa", "tác hại"],
     featured: true,
     status: "published",
     publishedAt: new Date(),
     readTime: 8,
-    language: "en"
+    language: "en",
   },
   {
     title: "Làm thế nào để từ chối ma túy một cách hiệu quả",
@@ -95,14 +96,15 @@ Nếu bạn thường xuyên bị áp lực sử dụng ma túy, hãy cân nhắ
 
 **Nhớ rằng**: Sức khỏe và tương lai của bạn quan trọng hơn việc làm hài lòng người khác.
     `,
-    excerpt: "Hướng dẫn các chiến lược hiệu quả để từ chối ma túy và bảo vệ bản thân khỏi áp lực xã hội.",
+    excerpt:
+      "Hướng dẫn các chiến lược hiệu quả để từ chối ma túy và bảo vệ bản thân khỏi áp lực xã hội.",
     category: "prevention",
     tags: ["từ chối ma túy", "áp lực bạn bè", "kỹ năng sống", "tự bảo vệ"],
     featured: false,
     status: "published",
     publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     readTime: 6,
-    language: "en"
+    language: "en",
   },
   {
     title: "Vai trò của gia đình trong phòng chống ma túy",
@@ -155,14 +157,15 @@ Gia đình đóng vai trò quan trọng nhất trong việc phòng ngừa và h�
 
 **Nhớ rằng**: Tình yêu thương và sự ủng hộ từ gia đình là sức mạnh lớn nhất giúp con em tránh xa ma túy.
     `,
-    excerpt: "Gia đình là tuyến phòng thủ đầu tiên và quan trọng nhất trong cuộc chiến chống ma túy.",
+    excerpt:
+      "Gia đình là tuyến phòng thủ đầu tiên và quan trọng nhất trong cuộc chiến chống ma túy.",
     category: "family",
     tags: ["gia đình", "phòng ngừa", "giáo dục", "hỗ trợ"],
     featured: true,
     status: "published",
     publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
     readTime: 10,
-    language: "en"
+    language: "en",
   },
   {
     title: "Các hoạt động thể thao giúp phòng chống ma túy",
@@ -228,33 +231,35 @@ Thể thao không chỉ giúp rèn luyện sức khỏe mà còn là công cụ 
 
 **Lưu ý**: Thể thao là cách tự nhiên và hiệu quả để thay thế những cảm giác "phê" có hại bằng những cảm giác tích cực từ vận động.
     `,
-    excerpt: "Khám phá cách thể thao có thể trở thành công cụ mạnh mẽ trong việc phòng chống ma túy và xây dựng lối sống lành mạnh.",
+    excerpt:
+      "Khám phá cách thể thao có thể trở thành công cụ mạnh mẽ trong việc phòng chống ma túy và xây dựng lối sống lành mạnh.",
     category: "community",
     tags: ["thể thao", "lối sống lành mạnh", "phòng ngừa", "sức khỏe"],
     featured: false,
     status: "published",
     publishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
     readTime: 12,
-    language: "en"
-  }
+    language: "en",
+  },
 ];
 
 // Course data
 const courseData = [
   {
     title: "Hiểu biết cơ bản về ma túy và tác hại",
-    description: "Khóa học cung cấp kiến thức toàn diện về các loại ma túy, tác hại đối với sức khỏe và xã hội.",
+    description:
+      "Khóa học cung cấp kiến thức toàn diện về các loại ma túy, tác hại đối với sức khỏe và xã hội.",
     level: "beginner",
     duration: 240, // 4 hours
     price: 0,
     category: "drug_awareness",
-    targetAudience: ["student", "university_student", "parent", "teacher"],
+    targetAgeGroup: ["student", "university_student", "parent", "teacher"],
     isPublished: true,
     featured: true,
     enrollment: {
       isOpen: true,
       capacity: 100,
-      enrolled: 0
+      enrolled: 0,
     },
     modules: [
       {
@@ -265,24 +270,34 @@ const courseData = [
         lessons: [
           {
             title: "Ma túy là gì?",
-            content: "Định nghĩa và khái niệm cơ bản về ma túy...",
+            content: "<h2>Định nghĩa</h2><p>Ma túy là các chất tự nhiên hoặc tổng hợp, khi đưa vào cơ thể sẽ ảnh hưởng đến hệ thần kinh trung ương và gây nghiện.</p>",
             type: "video",
             duration: 15,
-            order: 1
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: [
+              { title: "Tài liệu tham khảo về ma túy", url: "https://example.com/docs/drug-basics.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Phân loại ma túy",
-            content: "Các loại ma túy phổ biến và đặc điểm...",
+            content: "<h2>Phân loại ma túy</h2><ul><li>Ma túy tự nhiên</li><li>Ma túy tổng hợp</li><li>Ma túy bán tổng hợp</li></ul>",
             type: "text",
             duration: 20,
-            order: 2
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+            resources: [
+              { title: "Bảng phân loại ma túy chi tiết", url: "https://example.com/docs/drug-classification.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Lịch sử và tình hình hiện tại",
-            content: "Tình hình sử dụng ma túy ở Việt Nam và thế giới...",
+            content: "<h2>Lịch sử và tình hình hiện tại</h2><p>Ma túy đã xuất hiện từ lâu đời và có nhiều biến động trong xã hội hiện đại.</p>",
             type: "video",
             duration: 25,
-            order: 3
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+            resources: []
           }
         ]
       },
@@ -294,24 +309,32 @@ const courseData = [
         lessons: [
           {
             title: "Tác hại đối với sức khỏe thể chất",
-            content: "Những ảnh hưởng của ma túy đến cơ thể...",
+            content: "<h2>Tác hại đối với sức khỏe thể chất</h2><p>Ma túy gây ra nhiều vấn đề về sức khỏe như suy giảm trí nhớ, rối loạn tâm thần, và các bệnh lý khác.</p>",
             type: "video",
             duration: 30,
-            order: 1
+            order: 1,
+            videoUrl: "https://www.youtube.com/watch?v=ScMzIvxBSi4",
+            resources: [
+              { title: "Nghiên cứu về tác hại của ma túy", url: "https://example.com/docs/drug-effects.pdf", type: "pdf" }
+            ]
           },
           {
             title: "Tác hại đối với sức khỏe tâm thần",
-            content: "Rối loạn tâm lý do sử dụng ma túy...",
+            content: "<h2>Tác hại đối với sức khỏe tâm thần</h2><p>Người sử dụng ma túy có nguy cơ cao mắc các rối loạn tâm thần như trầm cảm, lo âu, hoang tưởng.</p>",
             type: "text",
             duration: 30,
-            order: 2
+            order: 2,
+            videoUrl: "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+            resources: []
           },
           {
             title: "Tác động xã hội",
-            content: "Ảnh hưởng đến gia đình và cộng đồng...",
+            content: "<h2>Tác động xã hội</h2><p>Ma túy không chỉ ảnh hưởng đến cá nhân mà còn gây ra nhiều hệ lụy cho gia đình và xã hội.</p>",
             type: "video",
             duration: 30,
-            order: 3
+            order: 3,
+            videoUrl: "https://www.w3schools.com/html/movie.mp4",
+            resources: []
           }
         ]
       },
@@ -320,77 +343,39 @@ const courseData = [
         description: "Nhận biết các yếu tố có thể dẫn đến sử dụng ma túy",
         duration: 60,
         order: 3,
-        lessons: [
-          {
-            title: "Yếu tố cá nhân",
-            content: "Những đặc điểm cá nhân làm tăng nguy cơ...",
-            type: "text",
-            duration: 20,
-            order: 1
-          },
-          {
-            title: "Yếu tố môi trường",
-            content: "Ảnh hưởng của môi trường sống...",
-            type: "video",
-            duration: 20,
-            order: 2
-          },
-          {
-            title: "Áp lực xã hội",
-            content: "Tác động của áp lực từ bạn bè và xã hội...",
-            type: "text",
-            duration: 20,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Phòng ngừa và bảo vệ bản thân",
         description: "Các biện pháp phòng ngừa hiệu quả",
         duration: 30,
         order: 4,
-        lessons: [
-          {
-            title: "Kỹ năng từ chối",
-            content: "Cách nói không với ma túy...",
-            type: "video",
-            duration: 15,
-            order: 1
-          },
-          {
-            title: "Xây dựng lối sống lành mạnh",
-            content: "Những thói quen tích cực...",
-            type: "text",
-            duration: 15,
-            order: 2
-          }
-        ]
-      }
+        },
     ],
     requirements: ["Không có yêu cầu tiên quyết"],
     whatYouWillLearn: [
       "Hiểu rõ về các loại ma túy và tác hại",
       "Nhận biết các yếu tố nguy cơ",
       "Kỹ năng phòng ngừa và tự bảo vệ",
-      "Cách xây dựng lối sống lành mạnh"
+      "Cách xây dựng lối sống lành mạnh",
     ],
     language: "en",
-    certificateAwarded: true
+    certificateAwarded: true,
   },
   {
     title: "Kỹ năng tư vấn và hỗ trợ người nghiện",
-    description: "Khóa học dành cho những người muốn hỗ trợ người thân hoặc bạn bè có vấn đề với ma túy.",
+    description:
+      "Khóa học dành cho những người muốn hỗ trợ người thân hoặc bạn bè có vấn đề với ma túy.",
     level: "intermediate",
     duration: 360, // 6 hours
     price: 0,
     category: "counseling",
-    targetAudience: ["parent", "teacher", "other"],
+    targetAgeGroup: ["parent", "teacher", "other"],
     isPublished: true,
     featured: true,
     enrollment: {
       isOpen: true,
       capacity: 50,
-      enrolled: 0
+      enrolled: 0,
     },
     modules: [
       {
@@ -398,128 +383,54 @@ const courseData = [
         description: "Bản chất của nghiện và quá trình hình thành",
         duration: 90,
         order: 1,
-        lessons: [
-          {
-            title: "Nghiện là gì?",
-            content: "Định nghĩa và cơ chế hình thành nghiện...",
-            type: "video",
-            duration: 30,
-            order: 1
-          },
-          {
-            title: "Các giai đoạn của nghiện",
-            content: "Từ thử nghiệm đến nghiện nặng...",
-            type: "text",
-            duration: 30,
-            order: 2
-          },
-          {
-            title: "Dấu hiệu nhận biết",
-            content: "Cách phát hiện sớm vấn đề nghiện...",
-            type: "video",
-            duration: 30,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Kỹ năng giao tiếp",
         description: "Cách nói chuyện hiệu quả với người có vấn đề ma túy",
         duration: 120,
         order: 2,
-        lessons: [
-          {
-            title: "Lắng nghe không phán xét",
-            content: "Kỹ năng lắng nghe tích cực...",
-            type: "video",
-            duration: 40,
-            order: 1
-          },
-          {
-            title: "Cách đặt câu hỏi",
-            content: "Đặt câu hỏi mở để hiểu rõ vấn đề...",
-            type: "text",
-            duration: 40,
-            order: 2
-          },
-          {
-            title: "Xử lý các tình huống khó khăn",
-            content: "Đối phó với sự chối bỏ và tức giận...",
-            type: "video",
-            duration: 40,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Các phương pháp hỗ trợ",
         description: "Những cách tiếp cận để giúp đỡ người nghiện",
         duration: 90,
         order: 3,
-        lessons: [
-          {
-            title: "Can thiệp động lực",
-            content: "Kỹ thuật tăng cường động lực thay đổi...",
-            type: "video",
-            duration: 45,
-            order: 1
-          },
-          {
-            title: "Hỗ trợ gia đình",
-            content: "Cách toàn gia đình cùng tham gia...",
-            type: "text",
-            duration: 45,
-            order: 2
-          }
-        ]
-      },
+        },
       {
         title: "Chăm sóc bản thân",
         description: "Tự chăm sóc khi hỗ trợ người khác",
         duration: 60,
         order: 4,
-        lessons: [
-          {
-            title: "Quản lý stress",
-            content: "Cách xử lý áp lực khi giúp đỡ người khác...",
-            type: "video",
-            duration: 30,
-            order: 1
-          },
-          {
-            title: "Tìm kiếm hỗ trợ",
-            content: "Khi nào cần sự giúp đỡ chuyên nghiệp...",
-            type: "text",
-            duration: 30,
-            order: 2
-          }
-        ]
-      }
+        },
     ],
-    requirements: ["Hoàn thành khóa học cơ bản", "Có kinh nghiệm làm việc với người có vấn đề"],
+    requirements: [
+      "Hoàn thành khóa học cơ bản",
+      "Có kinh nghiệm làm việc với người có vấn đề",
+    ],
     whatYouWillLearn: [
       "Hiểu sâu về bản chất của nghiện",
       "Kỹ năng giao tiếp hiệu quả",
       "Phương pháp can thiệp và hỗ trợ",
-      "Cách chăm sóc bản thân trong quá trình hỗ trợ"
+      "Cách chăm sóc bản thân trong quá trình hỗ trợ",
     ],
     language: "en",
-    certificateAwarded: true
+    certificateAwarded: true,
   },
   {
     title: "Phòng ngừa ma túy trong môi trường học đường",
-    description: "Khóa học chuyên biệt dành cho giáo viên và nhân viên giáo dục.",
+    description:
+      "Khóa học chuyên biệt dành cho giáo viên và nhân viên giáo dục.",
     level: "intermediate",
     duration: 300, // 5 hours
     price: 0,
     category: "prevention_skills",
-    targetAudience: ["teacher"],
+    targetAgeGroup: ["teacher"],
     isPublished: true,
     featured: false,
     enrollment: {
       isOpen: true,
       capacity: 30,
-      enrolled: 0
+      enrolled: 0,
     },
     modules: [
       {
@@ -527,121 +438,39 @@ const courseData = [
         description: "Hiện trạng và thách thức hiện tại",
         duration: 75,
         order: 1,
-        lessons: [
-          {
-            title: "Thống kê và số liệu",
-            content: "Tình hình sử dụng ma túy ở học sinh, sinh viên...",
-            type: "text",
-            duration: 25,
-            order: 1
-          },
-          {
-            title: "Các yếu tố nguy cơ trong trường học",
-            content: "Những điều kiện thuận lợi cho ma túy...",
-            type: "video",
-            duration: 25,
-            order: 2
-          },
-          {
-            title: "Dấu hiệu cảnh báo",
-            content: "Nhận biết học sinh có vấn đề...",
-            type: "text",
-            duration: 25,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Xây dựng chương trình phòng ngừa",
         description: "Thiết kế các hoạt động giáo dục phòng ngừa",
         duration: 120,
         order: 2,
-        lessons: [
-          {
-            title: "Nguyên tắc giáo dục phòng ngừa",
-            content: "Các nguyên tắc cơ bản khi thiết kế chương trình...",
-            type: "video",
-            duration: 40,
-            order: 1
-          },
-          {
-            title: "Phương pháp giảng dạy hiệu quả",
-            content: "Kỹ thuật truyền đạt thông tin hấp dẫn...",
-            type: "text",
-            duration: 40,
-            order: 2
-          },
-          {
-            title: "Thiết kế hoạt động thực hành",
-            content: "Các trò chơi và bài tập tương tác...",
-            type: "video",
-            duration: 40,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Xử lý các tình huống khó khăn",
         description: "Ứng phó khi phát hiện học sinh sử dụng ma túy",
         duration: 75,
         order: 3,
-        lessons: [
-          {
-            title: "Quy trình xử lý",
-            content: "Các bước cần thực hiện khi phát hiện vấn đề...",
-            type: "text",
-            duration: 25,
-            order: 1
-          },
-          {
-            title: "Làm việc với gia đình",
-            content: "Cách trao đổi với phụ huynh...",
-            type: "video",
-            duration: 25,
-            order: 2
-          },
-          {
-            title: "Phối hợp với chuyên gia",
-            content: "Khi nào cần chuyển gửi...",
-            type: "text",
-            duration: 25,
-            order: 3
-          }
-        ]
-      },
+        },
       {
         title: "Xây dựng môi trường tích cực",
         description: "Tạo không gian an toàn và hỗ trợ",
         duration: 30,
         order: 4,
-        lessons: [
-          {
-            title: "Văn hóa trường học tích cực",
-            content: "Xây dựng môi trường không khoan nhượng với ma túy...",
-            type: "video",
-            duration: 15,
-            order: 1
-          },
-          {
-            title: "Hoạt động ngoại khóa",
-            content: "Tổ chức các hoạt động lành mạnh...",
-            type: "text",
-            duration: 15,
-            order: 2
-          }
-        ]
-      }
+        },
     ],
-    requirements: ["Là giáo viên hoặc nhân viên giáo dục", "Có hiểu biết cơ bản về ma túy"],
+    requirements: [
+      "Là giáo viên hoặc nhân viên giáo dục",
+      "Có hiểu biết cơ bản về ma túy",
+    ],
     whatYouWillLearn: [
       "Hiểu rõ tình hình ma túy trong học đường",
       "Thiết kế chương trình giáo dục hiệu quả",
       "Xử lý các tình huống khó khăn",
-      "Xây dựng môi trường học tập tích cực"
+      "Xây dựng môi trường học tập tích cực",
     ],
     language: "en",
-    certificateAwarded: true
-  }
+    certificateAwarded: true,
+  },
 ];
 
 // Counselor data
@@ -654,92 +483,114 @@ const counselorData = [
     phone: "0901234567",
     role: "consultant",
     ageGroup: "other",
-    specializations: ["addiction_counseling", "cognitive_behavioral", "family_therapy"],
+    specializations: [
+      "addiction_counseling",
+      "cognitive_behavioral",
+      "family_therapy",
+    ],
     experience: 8,
     education: [
       {
         degree: "Tiến sĩ Tâm lý học",
         institution: "Đại học Quốc gia Hà Nội",
-        year: 2015
+        year: 2015,
       },
       {
         degree: "Thạc sĩ Tâm lý lâm sàng",
         institution: "Đại học Y Hà Nội",
-        year: 2012
-      }
+        year: 2012,
+      },
     ],
     certifications: [
       {
         name: "Chứng chỉ tư vấn nghiện chất",
         issuedBy: "Bộ Y tế",
         issuedDate: new Date("2018-05-15"),
-        expiryDate: new Date("2025-05-15")
-      }
+        expiryDate: new Date("2025-05-15"),
+      },
     ],
     bio: "Tiến sĩ Lan có hơn 8 năm kinh nghiệm trong lĩnh vực tư vấn và điều trị nghiện chất. Bà chuyên về liệu pháp nhận thức hành vi và đã giúp đỡ hàng trăm bệnh nhân vượt qua vấn đề nghiện.",
     expertise: ["Nghiện chất", "Rối loạn lo âu", "Trầm cảm", "Tư vấn gia đình"],
     languages: [
       { language: "vi", proficiency: "native" },
-      { language: "en", proficiency: "advanced" }
+      { language: "en", proficiency: "advanced" },
     ],
     clientTypes: ["individual", "family", "adults"],
     availability: {
-      monday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      tuesday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      wednesday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      thursday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      friday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      saturday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" }
-      ]},
-      sunday: { available: false, timeSlots: [] }
+      monday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      tuesday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      wednesday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      thursday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      friday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      saturday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+        ],
+      },
+      sunday: { available: false, timeSlots: [] },
     },
     sessionTypes: [
       { type: "individual", duration: 60, price: 700000 },
-      { type: "family", duration: 90, price: 900000 }
+      { type: "family", duration: 90, price: 900000 },
     ],
     fees: {
       online: 500000,
-      inPerson: 700000
+      inPerson: 700000,
     },
     isActive: true,
     isVerified: true,
     rating: 4.8,
     totalConsultations: 156,
     profileImage: "",
-    officeAddress: "123 Đường Láng, Đống Đa, Hà Nội"
+    officeAddress: "123 Đường Láng, Đống Đa, Hà Nội",
   },
   {
     firstName: "TS. Trần",
@@ -749,87 +600,112 @@ const counselorData = [
     phone: "0907654321",
     role: "consultant",
     ageGroup: "other",
-    specializations: ["addiction_counseling", "trauma_therapy", "crisis_intervention", "recovery_coaching"],
+    specializations: [
+      "addiction_counseling",
+      "trauma_therapy",
+      "crisis_intervention",
+      "recovery_coaching",
+    ],
     experience: 12,
     education: [
       {
         degree: "Tiến sĩ Y khoa",
         institution: "Đại học Y Hồ Chí Minh",
-        year: 2010
+        year: 2010,
       },
       {
         degree: "Chuyên khoa II Tâm thần",
         institution: "Bệnh viện Tâm thần Trung ương",
-        year: 2014
-      }
+        year: 2014,
+      },
     ],
     certifications: [
       {
         name: "Chứng chỉ điều trị nghiện quốc tế",
         issuedBy: "WHO",
         issuedDate: new Date("2016-03-20"),
-        expiryDate: new Date("2026-03-20")
-      }
+        expiryDate: new Date("2026-03-20"),
+      },
     ],
     bio: "Tiến sĩ Hoàng là bác sĩ chuyên khoa tâm thần với 12 năm kinh nghiệm điều trị nghiện chất. Ông đã tham gia nhiều chương trình cộng đồng và nghiên cứu về phòng chống ma túy.",
-    expertise: ["Điều trị nghiện", "Rối loạn tâm thần", "Tư vấn cai nghiện", "Phục hồi chức năng"],
+    expertise: [
+      "Điều trị nghiện",
+      "Rối loạn tâm thần",
+      "Tư vấn cai nghiện",
+      "Phục hồi chức năng",
+    ],
     languages: [
       { language: "vi", proficiency: "native" },
       { language: "en", proficiency: "advanced" },
-      { language: "fr", proficiency: "intermediate" }
+      { language: "fr", proficiency: "intermediate" },
     ],
     clientTypes: ["individual", "group", "adults"],
     availability: {
-      monday: { available: true, timeSlots: [
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "11:00", end: "12:00" },
-        { start: "15:00", end: "16:00" },
-        { start: "16:00", end: "17:00" }
-      ]},
-      tuesday: { available: true, timeSlots: [
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "11:00", end: "12:00" },
-        { start: "15:00", end: "16:00" },
-        { start: "16:00", end: "17:00" }
-      ]},
+      monday: {
+        available: true,
+        timeSlots: [
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "11:00", end: "12:00" },
+          { start: "15:00", end: "16:00" },
+          { start: "16:00", end: "17:00" },
+        ],
+      },
+      tuesday: {
+        available: true,
+        timeSlots: [
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "11:00", end: "12:00" },
+          { start: "15:00", end: "16:00" },
+          { start: "16:00", end: "17:00" },
+        ],
+      },
       wednesday: { available: false, timeSlots: [] },
-      thursday: { available: true, timeSlots: [
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "11:00", end: "12:00" },
-        { start: "15:00", end: "16:00" },
-        { start: "16:00", end: "17:00" }
-      ]},
-      friday: { available: true, timeSlots: [
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "11:00", end: "12:00" },
-        { start: "15:00", end: "16:00" },
-        { start: "16:00", end: "17:00" }
-      ]},
-      saturday: { available: true, timeSlots: [
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "11:00", end: "12:00" }
-      ]},
-      sunday: { available: false, timeSlots: [] }
+      thursday: {
+        available: true,
+        timeSlots: [
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "11:00", end: "12:00" },
+          { start: "15:00", end: "16:00" },
+          { start: "16:00", end: "17:00" },
+        ],
+      },
+      friday: {
+        available: true,
+        timeSlots: [
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "11:00", end: "12:00" },
+          { start: "15:00", end: "16:00" },
+          { start: "16:00", end: "17:00" },
+        ],
+      },
+      saturday: {
+        available: true,
+        timeSlots: [
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "11:00", end: "12:00" },
+        ],
+      },
+      sunday: { available: false, timeSlots: [] },
     },
     sessionTypes: [
       { type: "individual", duration: 60, price: 800000 },
-      { type: "group", duration: 90, price: 1200000 }
+      { type: "group", duration: 90, price: 1200000 },
     ],
     fees: {
       online: 600000,
-      inPerson: 800000
+      inPerson: 800000,
     },
     isActive: true,
     isVerified: true,
     rating: 4.9,
     totalConsultations: 234,
     profileImage: "",
-    officeAddress: "456 Nguyễn Thị Minh Khai, Quận 3, TP.HCM"
+    officeAddress: "456 Nguyễn Thị Minh Khai, Quận 3, TP.HCM",
   },
   {
     firstName: "ThS. Lê",
@@ -839,107 +715,140 @@ const counselorData = [
     phone: "0909876543",
     role: "consultant",
     ageGroup: "other",
-    specializations: ["family_therapy", "youth_counseling", "prevention_education", "motivational_interviewing"],
+    specializations: [
+      "family_therapy",
+      "youth_counseling",
+      "prevention_education",
+      "motivational_interviewing",
+    ],
     experience: 6,
     education: [
       {
         degree: "Thạc sĩ Tâm lý học Ứng dụng",
         institution: "Đại học Sư phạm Hà Nội",
-        year: 2018
+        year: 2018,
       },
       {
         degree: "Cử nhân Tâm lý học",
         institution: "Đại học Khoa học Xã hội và Nhân văn",
-        year: 2015
-      }
+        year: 2015,
+      },
     ],
     certifications: [
       {
         name: "Chứng chỉ tư vấn gia đình",
         issuedBy: "Hiệp hội Tâm lý Việt Nam",
         issuedDate: new Date("2019-08-10"),
-        expiryDate: new Date("2024-08-10")
-      }
+        expiryDate: new Date("2024-08-10"),
+      },
     ],
     bio: "Thạc sĩ Mai chuyên về tư vấn gia đình và hỗ trợ thanh thiếu niên. Cô có kinh nghiệm làm việc với các gia đình có con em gặp vấn đề về ma túy và rối loạn hành vi.",
-    expertise: ["Tư vấn gia đình", "Tâm lý thanh thiếu niên", "Kỹ năng sống", "Phòng ngừa nghiện"],
+    expertise: [
+      "Tư vấn gia đình",
+      "Tâm lý thanh thiếu niên",
+      "Kỹ năng sống",
+      "Phòng ngừa nghiện",
+    ],
     languages: [
       { language: "vi", proficiency: "native" },
-      { language: "en", proficiency: "intermediate" }
+      { language: "en", proficiency: "intermediate" },
     ],
     clientTypes: ["family", "children", "adolescents"],
     availability: {
-      monday: { available: true, timeSlots: [
-        { start: "07:00", end: "08:00" },
-        { start: "08:00", end: "09:00" },
-        { start: "18:00", end: "19:00" },
-        { start: "19:00", end: "20:00" },
-        { start: "20:00", end: "21:00" }
-      ]},
-      tuesday: { available: true, timeSlots: [
-        { start: "07:00", end: "08:00" },
-        { start: "08:00", end: "09:00" },
-        { start: "18:00", end: "19:00" },
-        { start: "19:00", end: "20:00" },
-        { start: "20:00", end: "21:00" }
-      ]},
-      wednesday: { available: true, timeSlots: [
-        { start: "07:00", end: "08:00" },
-        { start: "08:00", end: "09:00" },
-        { start: "18:00", end: "19:00" },
-        { start: "19:00", end: "20:00" },
-        { start: "20:00", end: "21:00" }
-      ]},
-      thursday: { available: true, timeSlots: [
-        { start: "07:00", end: "08:00" },
-        { start: "08:00", end: "09:00" },
-        { start: "18:00", end: "19:00" },
-        { start: "19:00", end: "20:00" },
-        { start: "20:00", end: "21:00" }
-      ]},
-      friday: { available: true, timeSlots: [
-        { start: "07:00", end: "08:00" },
-        { start: "08:00", end: "09:00" },
-        { start: "18:00", end: "19:00" },
-        { start: "19:00", end: "20:00" },
-        { start: "20:00", end: "21:00" }
-      ]},
-      saturday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]},
-      sunday: { available: true, timeSlots: [
-        { start: "08:00", end: "09:00" },
-        { start: "09:00", end: "10:00" },
-        { start: "10:00", end: "11:00" },
-        { start: "14:00", end: "15:00" },
-        { start: "15:00", end: "16:00" }
-      ]}
+      monday: {
+        available: true,
+        timeSlots: [
+          { start: "07:00", end: "08:00" },
+          { start: "08:00", end: "09:00" },
+          { start: "18:00", end: "19:00" },
+          { start: "19:00", end: "20:00" },
+          { start: "20:00", end: "21:00" },
+        ],
+      },
+      tuesday: {
+        available: true,
+        timeSlots: [
+          { start: "07:00", end: "08:00" },
+          { start: "08:00", end: "09:00" },
+          { start: "18:00", end: "19:00" },
+          { start: "19:00", end: "20:00" },
+          { start: "20:00", end: "21:00" },
+        ],
+      },
+      wednesday: {
+        available: true,
+        timeSlots: [
+          { start: "07:00", end: "08:00" },
+          { start: "08:00", end: "09:00" },
+          { start: "18:00", end: "19:00" },
+          { start: "19:00", end: "20:00" },
+          { start: "20:00", end: "21:00" },
+        ],
+      },
+      thursday: {
+        available: true,
+        timeSlots: [
+          { start: "07:00", end: "08:00" },
+          { start: "08:00", end: "09:00" },
+          { start: "18:00", end: "19:00" },
+          { start: "19:00", end: "20:00" },
+          { start: "20:00", end: "21:00" },
+        ],
+      },
+      friday: {
+        available: true,
+        timeSlots: [
+          { start: "07:00", end: "08:00" },
+          { start: "08:00", end: "09:00" },
+          { start: "18:00", end: "19:00" },
+          { start: "19:00", end: "20:00" },
+          { start: "20:00", end: "21:00" },
+        ],
+      },
+      saturday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
+      sunday: {
+        available: true,
+        timeSlots: [
+          { start: "08:00", end: "09:00" },
+          { start: "09:00", end: "10:00" },
+          { start: "10:00", end: "11:00" },
+          { start: "14:00", end: "15:00" },
+          { start: "15:00", end: "16:00" },
+        ],
+      },
     },
     sessionTypes: [
       { type: "family", duration: 90, price: 600000 },
-      { type: "individual", duration: 60, price: 600000 }
+      { type: "individual", duration: 60, price: 600000 },
     ],
     fees: {
       online: 400000,
-      inPerson: 600000
+      inPerson: 600000,
     },
     isActive: true,
     isVerified: true,
     rating: 4.7,
     totalConsultations: 89,
     profileImage: "",
-    officeAddress: "789 Hoàng Văn Thụ, Phú Nhuận, TP.HCM"
-  }
+    officeAddress: "789 Hoàng Văn Thụ, Phú Nhuận, TP.HCM",
+  },
 ];
 
 // Connect to database
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/drug_prevention");
+    await mongoose.connect(
+      process.env.MONGODB_URI || "mongodb://localhost:27017/drug_prevention"
+    );
     console.log("Connected to MongoDB");
   } catch (error) {
     console.error("Database connection error:", error);
@@ -951,38 +860,37 @@ const connectDB = async () => {
 const seedBlogs = async () => {
   try {
     console.log("Seeding blogs...");
-    
+
     // Clear existing blogs
     await Blog.deleteMany({});
-    
+
     // Create sample author (admin user)
     let author = await User.findOne({ role: "admin" });
     if (!author) {
-      const hashedPassword = await bcrypt.hash("admin123", 12);
-      author = await User.create({
+      const admin = new User({
         firstName: "Admin",
         lastName: "System",
         email: "admin@drugprevention.com",
-        password: hashedPassword,
+        password: "admin123", // plain text
         role: "admin",
         ageGroup: "other",
-        isEmailVerified: true
+        isEmailVerified: true,
       });
+      await admin.save(); // middleware sẽ hash password
     }
-    
+
     // Add author to blog data
-    const blogsWithAuthor = blogData.map(blog => ({
+    const blogsWithAuthor = blogData.map((blog) => ({
       ...blog,
-      author: author._id
+      author: author._id,
     }));
-    
+
     // Insert blogs one by one to avoid text index issues
     for (const blogData of blogsWithAuthor) {
       const blog = new Blog(blogData);
       await blog.save();
     }
     console.log(`✅ Created ${blogsWithAuthor.length} blogs`);
-    
   } catch (error) {
     console.error("Error seeding blogs:", error);
   }
@@ -991,10 +899,11 @@ const seedBlogs = async () => {
 const seedCourses = async () => {
   try {
     console.log("Seeding courses...");
-    
+
     // Clear existing courses
     await Course.deleteMany({});
-    
+    console.log("✅ Cleared existing courses");
+
     // Create sample instructor (admin user)
     let instructor = await User.findOne({ role: "admin" });
     if (!instructor) {
@@ -1006,33 +915,80 @@ const seedCourses = async () => {
         password: hashedPassword,
         role: "admin",
         ageGroup: "other",
-        isEmailVerified: true
+        isEmailVerified: true,
       });
+      console.log("✅ Created instructor:", instructor._id);
+    } else {
+      console.log("✅ Found existing instructor:", instructor._id);
+    }
+
+    // Add instructor to course data
+    const coursesWithInstructor = courseData.map((course) => ({
+      ...course,
+      instructor: instructor._id,
+      status: 'active',
+      modules: course.modules?.map(module => ({
+        ...module,
+        status: 'active',
+        lessons: module.lessons?.map(lesson => ({
+          ...lesson,
+          status: 'active',
+        })) || [],
+      })) || [],
+    }));
+
+    console.log(`📝 Prepared ${coursesWithInstructor.length} courses for insertion`);
+    
+    // Log first course structure for debugging
+    if (coursesWithInstructor.length > 0) {
+      console.log("🔍 First course structure:");
+      console.log(JSON.stringify(coursesWithInstructor[0], null, 2));
+    }
+
+    // Try to insert courses one by one to identify which one fails
+    for (let i = 0; i < coursesWithInstructor.length; i++) {
+      try {
+        console.log(`📝 Inserting course ${i + 1}/${coursesWithInstructor.length}: ${coursesWithInstructor[i].title}`);
+        
+        const course = new Course(coursesWithInstructor[i]);
+        
+        // Validate before saving
+        const validationError = course.validateSync();
+        if (validationError) {
+          console.error(`❌ Validation error for course ${i + 1}:`, validationError.message);
+          console.error("Validation details:", validationError.errors);
+          throw validationError;
+        }
+        
+        await course.save();
+        console.log(`✅ Successfully inserted course: ${course.title}`);
+        
+      } catch (error) {
+        console.error(`❌ Failed to insert course ${i + 1}: ${coursesWithInstructor[i].title}`);
+        console.error("Error details:", error.message);
+        if (error.errors) {
+          console.error("Validation errors:", error.errors);
+        }
+        throw error;
+      }
     }
     
-    // Add instructor to course data
-    const coursesWithInstructor = courseData.map(course => ({
-      ...course,
-      instructor: instructor._id
-    }));
-    
-    // Insert courses
-    await Course.insertMany(coursesWithInstructor);
     console.log(`✅ Created ${coursesWithInstructor.length} courses`);
-    
   } catch (error) {
-    console.error("Error seeding courses:", error);
+    console.error("❌ Error seeding courses:", error);
+    console.error("Full error object:", error);
+    throw error;
   }
 };
 
 const seedCounselors = async () => {
   try {
     console.log("Seeding counselors...");
-    
+
     // Clear existing counselors
     await Counselor.deleteMany({});
     await User.deleteMany({ role: "consultant" });
-    
+
     // Create counselor users and counselor profiles
     for (const counselorInfo of counselorData) {
       // Create user first
@@ -1046,28 +1002,32 @@ const seedCounselors = async () => {
         role: "consultant",
         ageGroup: counselorInfo.ageGroup,
         isEmailVerified: true,
-        isActive: counselorInfo.isActive
+        isActive: counselorInfo.isActive,
       };
-      
+
       const user = await User.create(userData);
-      
+
       // Create counselor profile
       const counselorProfile = {
         userId: user._id,
-        credentials: counselorInfo.education.map(edu => ({
-          type: "degree",
-          title: edu.degree,
-          institution: edu.institution,
-          year: edu.year,
-          isActive: true
-        })).concat(counselorInfo.certifications.map(cert => ({
-          type: "certificate",
-          title: cert.name,
-          institution: cert.issuedBy,
-          year: cert.issuedDate.getFullYear(),
-          expiryDate: cert.expiryDate,
-          isActive: true
-        }))),
+        credentials: counselorInfo.education
+          .map((edu) => ({
+            type: "degree",
+            title: edu.degree,
+            institution: edu.institution,
+            year: edu.year,
+            isActive: true,
+          }))
+          .concat(
+            counselorInfo.certifications.map((cert) => ({
+              type: "certificate",
+              title: cert.name,
+              institution: cert.issuedBy,
+              year: cert.issuedDate.getFullYear(),
+              expiryDate: cert.expiryDate,
+              isActive: true,
+            }))
+          ),
         specializations: counselorInfo.specializations,
         experience: {
           totalYears: counselorInfo.experience,
@@ -1075,11 +1035,15 @@ const seedCounselors = async () => {
             {
               organization: "Trung tâm Tư vấn Tâm lý",
               position: "Chuyên viên tư vấn",
-              startDate: new Date(new Date().getFullYear() - counselorInfo.experience, 0, 1),
+              startDate: new Date(
+                new Date().getFullYear() - counselorInfo.experience,
+                0,
+                1
+              ),
               isCurrent: true,
-              description: "Tư vấn và hỗ trợ người nghiện ma túy"
-            }
-          ]
+              description: "Tư vấn và hỗ trợ người nghiện ma túy",
+            },
+          ],
         },
         biography: counselorInfo.bio,
         areasOfExpertise: counselorInfo.expertise,
@@ -1089,70 +1053,69 @@ const seedCounselors = async () => {
           workingHours: {
             monday: {
               isAvailable: counselorInfo.availability.monday.available,
-              slots: counselorInfo.availability.monday.timeSlots
+              slots: counselorInfo.availability.monday.timeSlots,
             },
             tuesday: {
               isAvailable: counselorInfo.availability.tuesday.available,
-              slots: counselorInfo.availability.tuesday.timeSlots
+              slots: counselorInfo.availability.tuesday.timeSlots,
             },
             wednesday: {
               isAvailable: counselorInfo.availability.wednesday.available,
-              slots: counselorInfo.availability.wednesday.timeSlots
+              slots: counselorInfo.availability.wednesday.timeSlots,
             },
             thursday: {
               isAvailable: counselorInfo.availability.thursday.available,
-              slots: counselorInfo.availability.thursday.timeSlots
+              slots: counselorInfo.availability.thursday.timeSlots,
             },
             friday: {
               isAvailable: counselorInfo.availability.friday.available,
-              slots: counselorInfo.availability.friday.timeSlots
+              slots: counselorInfo.availability.friday.timeSlots,
             },
             saturday: {
               isAvailable: counselorInfo.availability.saturday.available,
-              slots: counselorInfo.availability.saturday.timeSlots
+              slots: counselorInfo.availability.saturday.timeSlots,
             },
             sunday: {
               isAvailable: counselorInfo.availability.sunday.available,
-              slots: counselorInfo.availability.sunday.timeSlots
-            }
-          }
+              slots: counselorInfo.availability.sunday.timeSlots,
+            },
+          },
         },
         sessionSettings: {
-          sessionTypes: counselorInfo.sessionTypes.map(st => ({
+          sessionTypes: counselorInfo.sessionTypes.map((st) => ({
             type: st.type,
             duration: st.duration,
             price: st.price,
-            isActive: true
+            isActive: true,
           })),
           defaultDuration: 60,
           breakBetweenSessions: 15,
           maxAppointmentsPerDay: 8,
-          advanceBookingDays: 30
+          advanceBookingDays: 30,
         },
         performance: {
           totalSessions: counselorInfo.totalConsultations,
           averageRating: counselorInfo.rating,
           totalReviews: Math.floor(counselorInfo.totalConsultations * 0.7),
-          completionRate: 95
+          completionRate: 95,
         },
         verificationStatus: {
           isVerified: counselorInfo.isVerified,
-          verifiedAt: new Date()
+          verifiedAt: new Date(),
         },
         status: counselorInfo.isActive ? "active" : "inactive",
         settings: {
           isPublicProfile: true,
           allowOnlineConsultations: true,
           autoConfirmAppointments: false,
-          sendReminders: true
-        }
+          sendReminders: true,
+        },
       };
-      
+
       await Counselor.create(counselorProfile);
     }
-    
+
     console.log(`✅ Created ${counselorData.length} counselors with profiles`);
-    
   } catch (error) {
     console.error("Error seeding counselors:", error);
   }
@@ -1162,15 +1125,14 @@ const seedCounselors = async () => {
 const seedData = async () => {
   try {
     await connectDB();
-    
+
     console.log("🌱 Starting data seeding...");
-    
+
     await seedBlogs();
     await seedCourses();
     await seedCounselors();
-    
+
     console.log("🎉 Data seeding completed successfully!");
-    
   } catch (error) {
     console.error("Error in seeding process:", error);
   } finally {

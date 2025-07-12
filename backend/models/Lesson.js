@@ -127,6 +127,11 @@ const lessonSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ["active", "archived"],
+      default: "active",
+    },
     // Completion tracking
     completionCriteria: {
       type: String,
