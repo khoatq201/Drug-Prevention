@@ -27,6 +27,7 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [forceUpdate, setForceUpdate] = useState(0); // Force re-render
 
   useEffect(() => {
     console.log("🔍 CourseDetail useEffect triggered");
@@ -41,6 +42,14 @@ const CourseDetail = () => {
       fetchEnrollment();
     }
   }, [id, authLoading, isAuthenticated, user]);
+
+  // Theo dõi thay đổi của enrollment để cập nhật UI
+  useEffect(() => {
+    console.log("🔍 Enrollment changed:", enrollment);
+    if (enrollment && enrollment.status === "enrolled") {
+      setEnrolling(true);
+    }
+  }, [enrollment]);
 
   const fetchCourse = async () => {
     try {
@@ -97,9 +106,25 @@ const CourseDetail = () => {
 
     try {
       setEnrolling(true);
+      console.log("🔍 Enrolling in course:", id);
+      
       const response = await api.post(`/courses/${id}/enroll`);
+      console.log("🔍 Enrollment response:", response.data);
+      
       if (response.data.success) {
-        setEnrollment(response.data.data);
+        // Cập nhật enrollment state với data từ response
+        const enrollmentData = response.data.data;
+        console.log("🔍 Setting enrollment:", enrollmentData);
+        setEnrollment(enrollmentData);
+        
+        // Đảm bảo enrolling state được set đúng
+        if (enrollmentData && enrollmentData.status === "enrolled") {
+          setEnrolling(true);
+        }
+        
+        // Force re-render để cập nhật UI ngay lập tức
+        setForceUpdate(prev => prev + 1);
+        
         toast.success("Đăng ký khóa học thành công!");
       }
     } catch (error) {

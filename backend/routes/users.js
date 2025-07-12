@@ -92,6 +92,75 @@ router.get("/", auth, authorize("manager"), async (req, res) => {
   }
 });
 
+// @route   GET /api/users/stats
+// @desc    Get current user's personal statistics
+// @access  Private
+router.get("/stats", auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Get user's stats in parallel
+    const [assessmentsCompleted, coursesData, appointmentsData] = await Promise.all([
+      Assessment.countDocuments({ userId }),
+      Course.find({ "enrollments.userId": userId }).select("enrollments"),
+      Appointment.find({ userId })
+    ]);
+
+    // Calculate course stats
+    let coursesEnrolled = 0;
+    let coursesCompleted = 0;
+    
+    coursesData.forEach(course => {
+      const userEnrollment = course.enrollments.find(e => e.userId.toString() === userId.toString());
+      if (userEnrollment) {
+        coursesEnrolled++;
+        if (userEnrollment.status === 'completed') {
+          coursesCompleted++;
+        }
+      }
+    });
+
+    // Calculate appointment stats
+    const upcomingAppointments = appointmentsData.filter(apt => {
+      const appointmentDate = new Date(apt.appointmentDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return appointmentDate >= today && (apt.status === 'pending' || apt.status === 'confirmed');
+    }).length;
+
+    // Get recent assessment scores for total score calculation
+    const recentAssessments = await Assessment.find({ userId })
+      .sort({ completedAt: -1 })
+      .limit(3);
+    
+    let totalScore = 0;
+    if (recentAssessments.length > 0) {
+      totalScore = recentAssessments.reduce((sum, assessment) => {
+        return sum + (assessment.score?.total || 0);
+      }, 0);
+    }
+
+    const stats = {
+      assessmentsCompleted,
+      coursesEnrolled,
+      coursesCompleted,
+      upcomingAppointments,
+      totalScore
+    };
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error("Get user stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê người dùng"
+    });
+  }
+});
+
 // @route   GET /api/users/:id
 // @desc    Get user by ID
 // @access  Private
@@ -463,75 +532,6 @@ router.get("/:id/appointments", auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi lấy lịch hẹn của người dùng",
-    });
-  }
-});
-
-// @route   GET /api/users/stats
-// @desc    Get current user's personal statistics
-// @access  Private
-router.get("/stats", auth, async (req, res) => {
-  try {
-    const userId = req.user._id;
-
-    // Get user's stats in parallel
-    const [assessmentsCompleted, coursesData, appointmentsData] = await Promise.all([
-      Assessment.countDocuments({ userId }),
-      Course.find({ "enrollments.userId": userId }).select("enrollments"),
-      Appointment.find({ userId })
-    ]);
-
-    // Calculate course stats
-    let coursesEnrolled = 0;
-    let coursesCompleted = 0;
-    
-    coursesData.forEach(course => {
-      const userEnrollment = course.enrollments.find(e => e.userId.toString() === userId.toString());
-      if (userEnrollment) {
-        coursesEnrolled++;
-        if (userEnrollment.status === 'completed') {
-          coursesCompleted++;
-        }
-      }
-    });
-
-    // Calculate appointment stats
-    const upcomingAppointments = appointmentsData.filter(apt => {
-      const appointmentDate = new Date(apt.appointmentDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return appointmentDate >= today && (apt.status === 'pending' || apt.status === 'confirmed');
-    }).length;
-
-    // Get recent assessment scores for total score calculation
-    const recentAssessments = await Assessment.find({ userId })
-      .sort({ completedAt: -1 })
-      .limit(3);
-    
-    let totalScore = 0;
-    if (recentAssessments.length > 0) {
-      totalScore = recentAssessments.reduce((sum, assessment) => {
-        return sum + (assessment.score?.total || 0);
-      }, 0);
-    }
-
-    const stats = {
-      assessmentsCompleted,
-      coursesEnrolled,
-      coursesCompleted,
-      upcomingAppointments,
-      totalScore
-    };
-
-    res.json({
-      success: true,
-      data: stats
-    });
-  } catch (error) {
-    console.error("Get user stats error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi lấy thống kê người dùng"
     });
   }
 });

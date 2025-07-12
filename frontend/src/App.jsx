@@ -196,8 +196,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route path="/appointments/book" element={<AppointmentBooking />} />
+              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />

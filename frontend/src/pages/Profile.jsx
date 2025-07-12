@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,16 +19,17 @@ import {
 import toast from "react-hot-toast";
 
 const Profile = () => {
-  const { user, isAuthenticated, api, dispatch } = useAuth();
+  const { user, isAuthenticated, api, dispatch, loading: authLoading ,token} = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     assessmentsCompleted: 0,
+    coursesEnrolled: 0,
     coursesCompleted: 0,
-    appointmentsAttended: 0,
-    certificatesEarned: 0,
+    upcomingAppointments: 0,
+    totalScore: 0,
   });
   const [formData, setFormData] = useState({
     firstName: "",
@@ -61,6 +62,9 @@ const Profile = () => {
     assessmentResults: true,
   });
 
+  // Ref để đảm bảo chỉ fetch stats 1 lần
+  const hasFetchedStats = useRef(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: { pathname: "/profile" } } });
@@ -89,18 +93,69 @@ const Profile = () => {
         assessmentResults: user.notificationPreferences?.assessments || true,
       });
     }
-
-    fetchUserStats();
   }, [isAuthenticated, user, navigate]);
 
+  // Tách riêng useEffect cho fetchUserStats để đảm bảo AuthContext đã sẵn sàng
+  useEffect(() => {
+    // Chỉ fetch stats khi AuthContext đã hoàn toàn sẵn sàng
+    if (isAuthenticated && user && !authLoading && !hasFetchedStats.current) {
+      // Thêm delay nhỏ để đảm bảo AuthContext đã cập nhật xong
+      const timer = setTimeout(() => {
+        console.log("🔍 Fetching stats - AuthContext ready");
+        fetchUserStats();
+        hasFetchedStats.current = true;
+      }, 200); // Tăng delay lên 200ms
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, user, authLoading]);
+
+  // Retry mechanism nếu fetchUserStats thất bại
+  useEffect(() => {
+    if (isAuthenticated && user && !authLoading && hasFetchedStats.current === false) {
+      const retryTimer = setTimeout(() => {
+        console.log("🔍 Retrying fetchUserStats");
+        fetchUserStats();
+      }, 1000); // Retry sau 1 giây
+      
+      return () => clearTimeout(retryTimer);
+    }
+  }, [isAuthenticated, user, authLoading]);
+
   const fetchUserStats = async () => {
+    // Triple check trước khi gọi API
+    const token = localStorage.getItem("token");
+    if (!isAuthenticated || !user || authLoading || !token) {
+      console.log("🔍 fetchUserStats skipped - not ready:", { 
+        isAuthenticated, 
+        user: !!user, 
+        authLoading, 
+        token: !!token 
+      });
+      return;
+    }
+
     try {
+      console.log("🔍 fetchUserStats called - all conditions met");
+      console.log("🔍 Token exists:", token ? "yes" : "no");
+      console.log("🔍 Token preview:", token.substring(0, 20) + "...");
+      console.log("🔍 IsAuthenticated:", isAuthenticated);
+      console.log("🔍 User:", user);
+      
       const response = await api.get("/users/stats");
+      console.log("🔍 Stats response:", response.data);
       if (response.data.success) {
         setStats(response.data.data);
       }
     } catch (error) {
       console.error("Error fetching user stats:", error);
+      console.log("🔍 Error response:", error.response?.data);
+      
+      // Nếu lỗi 401, có thể token chưa sẵn sàng, thử lại sau
+      if (error.response?.status === 401) {
+        console.log("🔍 401 error - token might not be ready, will retry later");
+        hasFetchedStats.current = false; // Reset để có thể thử lại
+      }
     }
   };
 
@@ -303,6 +358,14 @@ const Profile = () => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null;
@@ -941,7 +1004,7 @@ const Profile = () => {
                   <div className="bg-white rounded-lg shadow-md p-6 text-center">
                     <ClipboardDocumentListIcon className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats.assessmentsCompleted}
+                      {stats.assessmentsCompleted || 0}
                     </div>
                     <div className="text-sm text-gray-600">Bài đánh giá</div>
                   </div>
@@ -949,25 +1012,25 @@ const Profile = () => {
                   <div className="bg-white rounded-lg shadow-md p-6 text-center">
                     <AcademicCapIcon className="w-8 h-8 text-green-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats.coursesCompleted}
+                      {stats.coursesEnrolled || 0}
                     </div>
-                    <div className="text-sm text-gray-600">Khóa học</div>
+                    <div className="text-sm text-gray-600">Khóa học đã đăng ký</div>
                   </div>
 
                   <div className="bg-white rounded-lg shadow-md p-6 text-center">
                     <CalendarIcon className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats.appointmentsAttended}
+                      {stats.upcomingAppointments || 0}
                     </div>
-                    <div className="text-sm text-gray-600">Cuộc hẹn</div>
+                    <div className="text-sm text-gray-600">Lịch hẹn sắp tới</div>
                   </div>
 
                   <div className="bg-white rounded-lg shadow-md p-6 text-center">
                     <TrophyIcon className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-gray-900">
-                      {stats.certificatesEarned}
+                      {stats.coursesCompleted || 0}
                     </div>
-                    <div className="text-sm text-gray-600">Chứng chỉ</div>
+                    <div className="text-sm text-gray-600">Khóa học hoàn thành</div>
                   </div>
                 </div>
 

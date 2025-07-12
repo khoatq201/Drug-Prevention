@@ -4,9 +4,12 @@ import { useAuth } from "../contexts/AuthContext";
 
 // Component để bảo vệ routes yêu cầu authentication
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
+  console.log("🔍 ProtectedRoute - loading:", loading, "isAuthenticated:", isAuthenticated, "user:", user);
+
+  // Đợi cho đến khi AuthContext hoàn thành việc load
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -18,7 +21,9 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  // Chỉ redirect khi đã load xong và không authenticated
+  if (!isAuthenticated || !user) {
+    console.log("🔍 Redirecting to login from:", location.pathname);
     // Redirect về login với thông tin current location
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

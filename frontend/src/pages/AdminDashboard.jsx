@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/layout/AdminSidebar";
@@ -38,6 +38,9 @@ const AdminDashboard = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  
+  // Ref để đảm bảo chỉ fetch 1 lần khi AuthContext sẵn sàng
+  const hasInitialFetch = useRef(false);
 
   useEffect(() => {
     if (authLoading) return; // Đợi xác thực xong
@@ -49,14 +52,35 @@ const AdminDashboard = () => {
       navigate("/dashboard");
       return;
     }
-    fetchAllStats();
-    // eslint-disable-next-line
+    
+    // Chỉ fetch khi AuthContext đã hoàn toàn sẵn sàng
+    if (!hasInitialFetch.current) {
+      const timer = setTimeout(() => {
+        console.log("🔍 AdminDashboard - AuthContext ready, fetching stats");
+        fetchAllStats();
+        hasInitialFetch.current = true;
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
   }, [isAuthenticated, authLoading, user, navigate]);
 
   const fetchAllStats = async () => {
+    // Kiểm tra token trước khi gọi API
+    const token = localStorage.getItem("token");
+    if (!isAuthenticated || !token) {
+      console.log("🔍 AdminDashboard - fetchAllStats skipped - not ready:", { 
+        isAuthenticated, 
+        token: !!token 
+      });
+      return;
+    }
+
     setLoadingStats(true);
     setError(null);
     try {
+      console.log("🔍 AdminDashboard - fetchAllStats called - all conditions met");
+      
       const results = await Promise.all(
         statsEndpoints.map((endpoint) =>
           api.get(endpoint.url).then((res) => res.data.data).catch(() => null)
@@ -68,7 +92,14 @@ const AdminDashboard = () => {
       });
       setStats(statsObj);
     } catch (err) {
+      console.error("🔍 AdminDashboard - fetchAllStats error:", err);
       setError("Lỗi khi tải thống kê hệ thống.");
+      
+      // Nếu lỗi 401, có thể token chưa sẵn sàng
+      if (err.response?.status === 401) {
+        console.log("🔍 AdminDashboard - 401 error, token might not be ready");
+        hasInitialFetch.current = false; // Reset để có thể thử lại
+      }
     } finally {
       setLoadingStats(false);
     }

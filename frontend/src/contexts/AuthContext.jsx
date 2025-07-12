@@ -83,7 +83,7 @@ const initialState = {
   token: localStorage.getItem("token"),
   refreshToken: localStorage.getItem("refreshToken"),
   isAuthenticated: false,
-  loading: false,
+  loading: !!localStorage.getItem("token"), // Set loading = true nếu có token
   error: null,
 };
 
@@ -168,6 +168,8 @@ export const AuthProvider = ({ children }) => {
   // Check if user is logged in on app start
   useEffect(() => {
     const checkAuth = async () => {
+      console.log("🔍 Starting auth check...");
+      
       // Skip auth check if we're on Google OAuth success page
       if (window.location.pathname === "/auth/google/success") {
         console.log("🔍 Skipping auth check on Google success page");
@@ -175,10 +177,14 @@ export const AuthProvider = ({ children }) => {
       }
 
       const token = localStorage.getItem("token");
+      console.log("🔍 Token exists:", !!token);
+      
       if (token) {
         try {
+          console.log("🔍 Setting loading to true");
           dispatch({ type: "SET_LOADING", payload: true });
           const response = await api.get("/auth/profile");
+          console.log("🔍 Auth check successful");
           dispatch({
             type: "LOGIN_SUCCESS",
             payload: {
@@ -189,12 +195,25 @@ export const AuthProvider = ({ children }) => {
           });
         } catch (error) {
           console.error("Auth check failed:", error);
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          dispatch({ type: "LOGOUT" });
+          
+          // Chỉ logout nếu không phải lỗi network hoặc server
+          if (error.response?.status === 401) {
+            console.log("🔍 401 error, logging out");
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+            dispatch({ type: "LOGOUT" });
+          } else {
+            // Nếu là lỗi network, giữ nguyên trạng thái và thử lại sau
+            console.log("🔍 Network error, keeping current auth state");
+          }
         } finally {
+          console.log("🔍 Setting loading to false");
           dispatch({ type: "SET_LOADING", payload: false });
         }
+      } else {
+        // Không có token, đảm bảo loading = false
+        console.log("🔍 No token, setting loading to false");
+        dispatch({ type: "SET_LOADING", payload: false });
       }
     };
 

@@ -26,11 +26,29 @@ const AdminCourses = () => {
   });
   const searchTimeout = useRef();
 
+  // Ref để đảm bảo chỉ fetch 1 lần khi AuthContext sẵn sàng
+  const hasInitialFetch = useRef(false);
+
   useEffect(() => {
-    if (!isAuthenticated || authLoading) return;
-    fetchCourses();
-    // eslint-disable-next-line
-  }, [isAuthenticated, authLoading, filters.category, filters.level, filters.isPublished, pagination.current]);
+    // Chỉ fetch khi AuthContext đã hoàn toàn sẵn sàng
+    if (isAuthenticated && !authLoading && !hasInitialFetch.current) {
+      // Thêm delay nhỏ để đảm bảo AuthContext đã cập nhật xong
+      const timer = setTimeout(() => {
+        console.log("🔍 AdminCourses - AuthContext ready, fetching courses");
+        fetchCourses();
+        hasInitialFetch.current = true;
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // Fetch lại khi filters thay đổi (sau khi đã fetch lần đầu)
+  useEffect(() => {
+    if (hasInitialFetch.current) {
+      fetchCourses();
+    }
+  }, [filters.category, filters.level, filters.isPublished, pagination.current]);
 
   useEffect(() => {
     if (!isAuthenticated || authLoading) return;
@@ -43,8 +61,20 @@ const AdminCourses = () => {
   }, [filters.search]);
 
   const fetchCourses = async () => {
+    // Kiểm tra token trước khi gọi API
+    const token = localStorage.getItem("token");
+    if (!isAuthenticated || !token) {
+      console.log("🔍 AdminCourses - fetchCourses skipped - not ready:", { 
+        isAuthenticated, 
+        token: !!token 
+      });
+      return;
+    }
+
     try {
       setLoading(true);
+      console.log("🔍 AdminCourses - fetchCourses called - all conditions met");
+      
       const params = new URLSearchParams({
         page: pagination.current,
         limit: pagination.limit,
@@ -65,7 +95,14 @@ const AdminCourses = () => {
         }));
       }
     } catch (err) {
+      console.error("🔍 AdminCourses - fetchCourses error:", err);
       setError("Lỗi khi tải danh sách khóa học");
+      
+      // Nếu lỗi 401, có thể token chưa sẵn sàng
+      if (err.response?.status === 401) {
+        console.log("🔍 AdminCourses - 401 error, token might not be ready");
+        hasInitialFetch.current = false; // Reset để có thể thử lại
+      }
     } finally {
       setLoading(false);
     }
