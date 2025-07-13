@@ -148,16 +148,8 @@ const Appointments = () => {
 
   const fetchAvailableSlots = async (counselorUserId, date) => {
     try {
-      // First find the counselor by userId to get the counselor document ID
-      const counselorResponse = await api.get(`/counselors/search?userId=${counselorUserId}`);
-      const counselorDoc = counselorResponse.data.data?.[0];
-      
-      if (!counselorDoc) {
-        throw new Error("Không tìm thấy chuyên viên");
-      }
-      
-      // Then fetch the schedule using the counselor document ID
-      const response = await api.get(`/counselors/${counselorDoc._id}/schedule?date=${date}`);
+      // Direct fetch using the unified User ID route
+      const response = await api.get(`/counselors/user/${counselorUserId}/schedule?date=${date}`);
       setAvailableSlots(response.data.data?.availableSlots || []);
     } catch (error) {
       console.error("Error fetching available slots:", error);

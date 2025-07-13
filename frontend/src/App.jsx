@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
-import { ManagerRoute } from "./components/RoleProtectedRoute";
+import { ManagerRoute, ConsultantRoute } from "./components/RoleProtectedRoute";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
@@ -33,11 +33,23 @@ import CourseForm from "./pages/admin/CourseForm";
 import Blogs from "./pages/admin/Blogs";
 import AdminAssessments from "./pages/admin/Assessments";
 import AdminAssessmentDetail from "./pages/admin/AssessmentDetail";
+import AdminCounselors from "./pages/admin/AdminCounselors";
+import AdminAppointments from "./pages/admin/AdminAppointments";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import Lesson from "./pages/courses/Lesson";
 import ManagerCourses from "./pages/manager/ManagerCourses";
 import ManagerAssessments from "./pages/manager/ManagerAssessments";
 import ManagerBlogs from "./pages/manager/ManagerBlogs";
+import ManagerCounselors from "./pages/manager/ManagerCounselors";
+import CounselorDetail from "./pages/manager/CounselorDetail";
+import AdminCounselorDetail from "./pages/admin/AdminCounselorDetail";
+import CounselorForm from "./pages/manager/CounselorForm";
+import ConsultantAppointments from "./pages/consultant/ConsultantAppointments";
+import ConsultantSchedule from "./pages/consultant/ConsultantSchedule";
+import ConsultantClients from "./pages/consultant/ConsultantClients";
+import ConsultantProfile from "./pages/consultant/ConsultantProfile";
+import ConsultantDashboard from "./pages/ConsultantDashboard";
+import TestAuth from "./pages/TestAuth";
 import "./App.css";
 
 function App() {
@@ -113,6 +125,7 @@ function App() {
               <Route path="/assessments/:id" element={<AssessmentDetail />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="/test-auth" element={<TestAuth />} />
 
               {/* Protected Routes */}
               <Route
@@ -220,6 +233,80 @@ function App() {
                 }
               />
               <Route
+                path="/manager/counselors"
+                element={
+                  <ManagerRoute>
+                    <ManagerCounselors />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/counselors/new"
+                element={
+                  <ManagerRoute>
+                    <CounselorForm />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/counselors/:id"
+                element={
+                  <ManagerRoute>
+                    <CounselorDetail />
+                  </ManagerRoute>
+                }
+              />
+              <Route
+                path="/manager/counselors/:id/edit"
+                element={
+                  <ManagerRoute>
+                    <CounselorForm />
+                  </ManagerRoute>
+                }
+              />
+              
+              {/* Consultant Routes */}
+              <Route
+                path="/consultant"
+                element={
+                  <ProtectedRoute>
+                    <ConsultantDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultant/appointments"
+                element={
+                  <ProtectedRoute>
+                    <ConsultantAppointments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultant/schedule"
+                element={
+                  <ProtectedRoute>
+                    <ConsultantSchedule />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultant/clients"
+                element={
+                  <ProtectedRoute>
+                    <ConsultantClients />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/consultant/profile"
+                element={
+                  <ProtectedRoute>
+                    <ConsultantProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/users"
                 element={
                   <ProtectedRoute>
@@ -272,6 +359,46 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <AdminAssessmentDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/counselors"
+                element={
+                  <ProtectedRoute>
+                    <AdminCounselors />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/appointments"
+                element={
+                  <ProtectedRoute>
+                    <AdminAppointments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/counselors/:id"
+                element={
+                  <ProtectedRoute>
+                    <AdminCounselorDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/counselors/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <CounselorForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/counselors/new"
+                element={
+                  <ProtectedRoute>
+                    <CounselorForm />
                   </ProtectedRoute>
                 }
               />

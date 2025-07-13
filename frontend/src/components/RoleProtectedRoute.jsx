@@ -48,9 +48,14 @@ const ManagerRoute = ({ children }) => {
   return <RoleProtectedRoute allowedRoles={["manager"]}>{children}</RoleProtectedRoute>;
 };
 
+// Component để bảo vệ routes chỉ dành cho consultant
+const ConsultantRoute = ({ children }) => {
+  return <RoleProtectedRoute allowedRoles={["consultant"]}>{children}</RoleProtectedRoute>;
+};
+
 // Component để bảo vệ routes dành cho admin hoặc manager
 const AdminManagerRoute = ({ children }) => {
   return <RoleProtectedRoute allowedRoles={["admin", "manager"]}>{children}</RoleProtectedRoute>;
 };
 
-export { RoleProtectedRoute, AdminRoute, ManagerRoute, AdminManagerRoute }; 
+export { RoleProtectedRoute, AdminRoute, ManagerRoute, ConsultantRoute, AdminManagerRoute }; 

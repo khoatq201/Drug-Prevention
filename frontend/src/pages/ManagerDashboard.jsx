@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ManagerSidebar from "../components/layout/ManagerSidebar";
 import ManagerHeader from "../components/layout/ManagerHeader";
+import CounselorStats from "../components/manager/CounselorStats";
 
 const ManagerDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,6 +62,11 @@ const ManagerDashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Counselor Statistics */}
+          <div className="mt-8">
+            <CounselorStats />
           </div>
 
           {/* Info section */}

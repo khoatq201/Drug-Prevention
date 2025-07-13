@@ -38,8 +38,15 @@ const Dashboard = () => {
       navigate("/login", { state: { from: { pathname: "/dashboard" } } });
       return;
     }
+    
+    // Redirect consultant to their dashboard
+    if (user?.role === "consultant") {
+      navigate("/consultant");
+      return;
+    }
+    
     fetchDashboardData();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const fetchDashboardData = async () => {
     try {

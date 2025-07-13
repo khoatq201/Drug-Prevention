@@ -3,7 +3,9 @@ const router = express.Router();
 const User = require("../models/User");
 const Course = require("../models/Course");
 const Assessment = require("../models/Assessment");
+const { AssessmentResult } = require("../models/Assessment");
 const Appointment = require("../models/Appointment");
+const Counselor = require("../models/Counselor");
 const { auth, authorize } = require("../middleware/auth");
 
 // @route   GET /api/users
@@ -99,8 +101,7 @@ router.get("/stats", auth, async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Get AssessmentResult model
-    const AssessmentResult = Assessment.AssessmentResult;
+    // AssessmentResult is now imported at the top
 
     // Get user with populated courseHistory and assessmentHistory
     const user = await User.findById(userId)
@@ -116,7 +117,7 @@ router.get("/stats", auth, async (req, res) => {
     }
 
     // Get additional data in parallel
-    const [assessmentResults, appointmentsData] = await Promise.all([
+    const [, appointmentsData] = await Promise.all([
       AssessmentResult.find({ userId }).sort({ completedAt: -1 }),
       Appointment.find({ userId })
     ]);
@@ -429,7 +430,7 @@ router.get("/:id/courses", auth, async (req, res) => {
 
     // Filter and format enrollment data
     const userCourses = courses.map((course) => {
-      const enrollment = course.enrollments.find(
+      const enrollment = course.enrollment.find(
         (e) => e.userId.toString() === id
       );
       return {
@@ -484,17 +485,22 @@ router.get("/:id/assessments", auth, async (req, res) => {
 
     let query = { userId: id };
     if (type) {
-      query.assessmentType = type;
+      // Need to find assessment by type first, then filter by assessmentId
+      const assessment = await Assessment.findOne({ type: type.toUpperCase(), isActive: true });
+      if (assessment) {
+        query.assessmentId = assessment._id;
+      }
     }
 
     const skip = (page - 1) * limit;
 
-    const assessments = await Assessment.find(query)
-      .sort({ createdAt: -1 })
+    const assessments = await AssessmentResult.find(query)
+      .populate('assessmentId', 'name type description')
+      .sort({ completedAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
 
-    const total = await Assessment.countDocuments(query);
+    const total = await AssessmentResult.countDocuments(query);
 
     res.json({
       success: true,
@@ -817,6 +823,65 @@ router.post("/admin/create", auth, authorize("admin"), async (req, res) => {
 
     const user = new User(userData);
     await user.save();
+
+    // If user role is consultant, create counselor profile automatically
+    if (role === "consultant") {
+      try {
+        const counselorProfile = new Counselor({
+          userId: user._id,
+          biography: "",
+          specializations: [],
+          languages: [{ language: "vi", proficiency: "native" }], // Default to Vietnamese
+          experience: {
+            totalYears: 0,
+            workHistory: []
+          },
+          education: [],
+          certifications: [],
+          areasOfExpertise: [],
+          availability: {
+            workingHours: {
+              monday: { isAvailable: false, slots: [] },
+              tuesday: { isAvailable: false, slots: [] },
+              wednesday: { isAvailable: false, slots: [] },
+              thursday: { isAvailable: false, slots: [] },
+              friday: { isAvailable: false, slots: [] },
+              saturday: { isAvailable: false, slots: [] },
+              sunday: { isAvailable: false, slots: [] },
+            },
+            exceptions: []
+          },
+          sessionSettings: {
+            defaultDuration: 60,
+            breakBetweenSessions: 15,
+            maxAppointmentsPerDay: 8,
+            advanceBookingDays: 30
+          },
+          contactPreferences: {
+            preferredContactMethod: "email",
+            businessEmail: user.email,
+            businessPhone: user.phone || ""
+          },
+          settings: {
+            isPublicProfile: true, // Allow managers to see new counselors
+            allowOnlineConsultations: true // Allow online booking for new counselors
+          },
+          verificationStatus: {
+            isVerified: true, // Auto-verify counselors created by admin
+            verifiedAt: new Date(),
+            verifiedBy: req.user._id, // Admin who created this counselor
+            documents: []
+          },
+          status: "active"
+        });
+        
+        await counselorProfile.save();
+        console.log(`✅ Created counselor profile for user ${user.email}`);
+      } catch (counselorError) {
+        console.error("Error creating counselor profile:", counselorError);
+        // Don't fail user creation if counselor profile creation fails
+      }
+    }
 
     // Return user without password
     const userResponse = user.toObject();

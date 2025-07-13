@@ -48,9 +48,9 @@ const AppointmentBooking = () => {
     }
   };
 
-  const fetchAvailableSlots = async (counselorId, date) => {
+  const fetchAvailableSlots = async (counselorUserId, date) => {
     try {
-      const response = await api.get(`/counselors/${counselorId}/schedule?date=${date}`);
+      const response = await api.get(`/counselors/user/${counselorUserId}/schedule?date=${date}`);
       setAvailableSlots(response.data.data?.availableSlots || []);
     } catch (error) {
       console.error("Error fetching available slots:", error);
@@ -67,7 +67,7 @@ const AppointmentBooking = () => {
     setSelectedDate(date);
     setSelectedTime("");
     if (selectedCounselor && date) {
-      fetchAvailableSlots(selectedCounselor._id, date);
+      fetchAvailableSlots(selectedCounselor.userId._id, date);
     }
   };
 
@@ -87,7 +87,7 @@ const AppointmentBooking = () => {
       const [startTime, endTime] = selectedTime.split("-");
       
       const response = await api.post("/appointments", {
-        counselorId: selectedCounselor.userId._id,
+        counselorId: selectedCounselor._id,
         appointmentDate: selectedDate,
         appointmentTime: {
           start: startTime.trim(),
