@@ -729,4 +729,207 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
   }
 });
 
+// Admin: Get all courses (published and unpublished) with filtering and pagination
+router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
+  try {
+    const {
+      category,
+      level,
+      ageGroup,
+      language,
+      sort = "-createdAt",
+      page = 1,
+      limit = 20,
+      search,
+      isPublished,
+    } = req.query;
+
+    let query = {};
+    if (language) query.language = language;
+    if (category) query.category = category;
+    if (level) query.level = level;
+    if (ageGroup) query.targetAgeGroup = ageGroup;
+    if (typeof isPublished !== "undefined" && isPublished !== "") {
+      query.isPublished = isPublished === "true";
+    }
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+    const skip = (page - 1) * limit;
+    const courses = await Course.find(query)
+      .sort(sort)
+      .limit(parseInt(limit))
+      .skip(skip);
+    const total = await Course.countDocuments(query);
+    res.json({
+      success: true,
+      data: courses,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: courses.length,
+        totalResults: total,
+      },
+      filters: {
+        category,
+        level,
+        ageGroup,
+        language,
+        search,
+        isPublished,
+      },
+    });
+  } catch (error) {
+    console.error("Admin get all courses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách khóa học (admin)",
+    });
+  }
+});
+
+// Admin: Add a module to a course
+router.post("/:id/modules", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, order } = req.body;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const newModule = { title, description, order, lessons: [], quiz: { questions: [] } };
+    course.modules.push(newModule);
+    await course.save();
+    res.status(201).json({ success: true, message: "Đã thêm module", data: course.modules[course.modules.length - 1] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi thêm module", error: error.message });
+  }
+});
+
+// Admin: Edit a module in a course
+router.put("/:id/modules/:moduleId", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId } = req.params;
+    const { title, description, order } = req.body;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    if (title !== undefined) module.title = title;
+    if (description !== undefined) module.description = description;
+    if (order !== undefined) module.order = order;
+    await course.save();
+    res.json({ success: true, message: "Đã cập nhật module", data: module });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi cập nhật module", error: error.message });
+  }
+});
+
+// Admin: Delete a module from a course
+router.delete("/:id/modules/:moduleId", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId } = req.params;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    module.remove();
+    await course.save();
+    res.json({ success: true, message: "Đã xóa module" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi xóa module", error: error.message });
+  }
+});
+
+// Admin: Reorder modules in a course
+router.put("/:id/modules/reorder", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { moduleOrder } = req.body; // array of module IDs in new order
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    if (!Array.isArray(moduleOrder)) return res.status(400).json({ success: false, message: "moduleOrder phải là mảng" });
+    // Reorder modules
+    course.modules = moduleOrder.map(id => course.modules.id(id)).filter(Boolean);
+    await course.save();
+    res.json({ success: true, message: "Đã sắp xếp lại module", data: course.modules });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi sắp xếp module", error: error.message });
+  }
+});
+
+// Admin: Add a lesson to a module in a course
+router.post("/:id/modules/:moduleId/lessons", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId } = req.params;
+    const lessonData = req.body;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    module.lessons.push(lessonData);
+    await course.save();
+    res.status(201).json({ success: true, message: "Đã thêm bài học", data: module.lessons[module.lessons.length - 1] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi thêm bài học", error: error.message });
+  }
+});
+
+// Admin: Edit a lesson in a module
+router.put("/:id/modules/:moduleId/lessons/:lessonId", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId, lessonId } = req.params;
+    const lessonData = req.body;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    const lesson = module.lessons.id(lessonId);
+    if (!lesson) return res.status(404).json({ success: false, message: "Không tìm thấy bài học" });
+    Object.assign(lesson, lessonData);
+    await course.save();
+    res.json({ success: true, message: "Đã cập nhật bài học", data: lesson });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi cập nhật bài học", error: error.message });
+  }
+});
+
+// Admin: Delete a lesson from a module
+router.delete("/:id/modules/:moduleId/lessons/:lessonId", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId, lessonId } = req.params;
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    const lesson = module.lessons.id(lessonId);
+    if (!lesson) return res.status(404).json({ success: false, message: "Không tìm thấy bài học" });
+    lesson.remove();
+    await course.save();
+    res.json({ success: true, message: "Đã xóa bài học" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi xóa bài học", error: error.message });
+  }
+});
+
+// Admin: Reorder lessons in a module
+router.put("/:id/modules/:moduleId/lessons/reorder", auth, authorize("admin"), async (req, res) => {
+  try {
+    const { id, moduleId } = req.params;
+    const { lessonOrder } = req.body; // array of lesson IDs in new order
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    const module = course.modules.id(moduleId);
+    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    if (!Array.isArray(lessonOrder)) return res.status(400).json({ success: false, message: "lessonOrder phải là mảng" });
+    module.lessons = lessonOrder.map(id => module.lessons.id(id)).filter(Boolean);
+    await course.save();
+    res.json({ success: true, message: "Đã sắp xếp lại bài học", data: module.lessons });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi khi sắp xếp bài học", error: error.message });
+  }
+});
+
 module.exports = router;

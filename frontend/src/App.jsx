@@ -31,6 +31,7 @@ import AdminCourses from "./pages/admin/AdminCourses";
 import CourseForm from "./pages/admin/CourseForm";
 import Blogs from "./pages/admin/Blogs";
 import Lesson from "./pages/courses/Lesson";
+import AdminModulesLessons from "./pages/admin/AdminModulesLessons";
 import "./App.css";
 
 function App() {
@@ -193,6 +194,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Blogs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/modules-lessons"
+                element={
+                  <ProtectedRoute>
+                    <AdminModulesLessons />
                   </ProtectedRoute>
                 }
               />

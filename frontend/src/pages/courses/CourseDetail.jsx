@@ -466,6 +466,7 @@ const CourseDetail = () => {
                   <div className="text-center text-green-600 font-medium">
                     ✓ Đã đăng ký
                   </div>
+                  {/* Always show the 'Học Ngay!' button when user is enrolled, whether from enroll or /enrollment API */}
                   {course.modules && course.modules.length > 0 && (
                     <button
                       onClick={() => {

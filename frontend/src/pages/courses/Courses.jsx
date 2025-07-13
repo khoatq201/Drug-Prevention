@@ -258,7 +258,7 @@ const Courses = () => {
                   </div>
                 )}
                 
-                <div className="p-6">
+                <div className="p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-3">
                     <span className={`course-level ${getLevelStyle(course.level)}`}>
                       {getLevelText(course.level)}
@@ -290,7 +290,8 @@ const Courses = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex-1" />
+                  <div className="flex items-center justify-between mt-2">
                     <div className="text-lg font-bold text-green-600">
                       {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
                     </div>
