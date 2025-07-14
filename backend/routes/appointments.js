@@ -2,7 +2,42 @@ const express = require("express");
 const router = express.Router();
 const Appointment = require("../models/Appointment");
 const User = require("../models/User");
+const Counselor = require("../models/Counselor");
 const { auth, authorize, authorizeOwnerOrAdmin } = require("../middleware/auth");
+
+// Function to update counselor performance stats
+async function updateCounselorStats(counselorId) {
+  try {
+    const totalSessions = await Appointment.countDocuments({ 
+      counselorId: counselorId,
+      status: 'completed'
+    });
+    
+    const totalAppointments = await Appointment.countDocuments({ 
+      counselorId: counselorId
+    });
+    
+    const completedAppointments = await Appointment.countDocuments({ 
+      counselorId: counselorId,
+      status: { $in: ['completed'] }
+    });
+    
+    const completionRate = totalAppointments > 0 ? Math.round((completedAppointments / totalAppointments) * 100) : 0;
+    
+    // Update the counselor's performance stats
+    await Counselor.findByIdAndUpdate(counselorId, {
+      $set: {
+        'performance.totalSessions': totalSessions,
+        'performance.totalClients': totalSessions, // Assuming each session is with different client
+        'performance.completionRate': completionRate
+      }
+    });
+    
+    console.log(`Updated counselor ${counselorId} stats: ${totalSessions} sessions, ${completionRate}% completion rate`);
+  } catch (error) {
+    console.error('Error updating counselor stats:', error);
+  }
+}
 
 // Get all appointments (filtered by role)
 router.get("/", auth, async (req, res) => {
@@ -171,6 +206,9 @@ router.post("/", auth, async (req, res) => {
       $push: { appointmentHistory: appointment._id },
     });
     
+    // Update counselor stats
+    await updateCounselorStats(counselorId);
+    
     // Populate and return
     await appointment.populate("counselorId", "firstName lastName email specialization");
     
@@ -222,6 +260,9 @@ router.put("/:id", auth, async (req, res) => {
       });
     }
     
+    // Store old status for comparison
+    const oldStatus = appointment.status;
+    
     // Update appointment
     const updatedAppointment = await Appointment.findByIdAndUpdate(
       req.params.id,
@@ -229,6 +270,11 @@ router.put("/:id", auth, async (req, res) => {
       { new: true, runValidators: true }
     ).populate("userId", "firstName lastName email phone")
      .populate("counselorId", "firstName lastName email specialization");
+    
+    // If status changed, update counselor stats
+    if (req.body.status && req.body.status !== oldStatus) {
+      await updateCounselorStats(updatedAppointment.counselorId._id || updatedAppointment.counselorId);
+    }
     
     res.json({
       success: true,
@@ -290,6 +336,9 @@ router.delete("/:id", auth, async (req, res) => {
     });
     
     await appointment.save();
+    
+    // Update counselor stats
+    await updateCounselorStats(appointment.counselorId);
     
     res.json({
       success: true,
@@ -505,6 +554,33 @@ router.post("/:id/feedback", auth, async (req, res) => {
 });
 
 // Get appointment statistics (staff and above)
+router.get("/stats", auth, authorize("staff"), async (req, res) => {
+  try {
+    const total = await Appointment.countDocuments();
+    const pending = await Appointment.countDocuments({ status: 'pending' });
+    const confirmed = await Appointment.countDocuments({ status: 'confirmed' });
+    const completed = await Appointment.countDocuments({ status: 'completed' });
+    const cancelled = await Appointment.countDocuments({ status: 'cancelled' });
+    
+    res.json({
+      success: true,
+      data: {
+        total,
+        pending,
+        confirmed,
+        completed,
+        cancelled,
+      },
+    });
+  } catch (error) {
+    console.error("Get appointment stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê cuộc hẹn",
+    });
+  }
+});
+
 router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
   try {
     const { startDate, endDate, counselorId } = req.query;

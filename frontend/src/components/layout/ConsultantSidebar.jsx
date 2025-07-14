@@ -1,52 +1,46 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  AcademicCapIcon,
-  ClipboardDocumentListIcon,
-  UserGroupIcon,
   CalendarDaysIcon,
-  DocumentTextIcon,
+  UserIcon,
+  ChartBarIcon,
+  ClockIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 
-const ManagerSidebar = ({ isOpen, onClose }) => {
+const ConsultantSidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const menuItems = [
     {
       name: "Dashboard",
-      path: "/manager",
-      icon: AcademicCapIcon,
+      path: "/consultant",
+      icon: ChartBarIcon,
     },
     {
-      name: "Quản lý khóa học",
-      path: "/manager/courses",
-      icon: AcademicCapIcon,
-    },
-    {
-      name: "Quản lý đánh giá",
-      path: "/manager/assessments",
-      icon: ClipboardDocumentListIcon,
-    },
-    {
-      name: "Quản lý chuyên viên",
-      path: "/manager/counselors",
-      icon: UserGroupIcon,
-    },
-    {
-      name: "Quản lý cuộc hẹn",
-      path: "/manager/appointments",
+      name: "Lịch hẹn của tôi",
+      path: "/consultant/appointments",
       icon: CalendarDaysIcon,
     },
     {
-      name: "Quản lý bài viết",
-      path: "/manager/blogs",
-      icon: DocumentTextIcon,
+      name: "Lịch làm việc",
+      path: "/consultant/schedule",
+      icon: ClockIcon,
+    },
+    {
+      name: "Khách hàng",
+      path: "/consultant/clients",
+      icon: UsersIcon,
+    },
+    {
+      name: "Hồ sơ chuyên viên",
+      path: "/consultant/profile",
+      icon: UserIcon,
     },
   ];
 
   const isActive = (path) => {
-    if (path === "/manager") {
-      return location.pathname === "/manager";
+    if (path === "/consultant") {
+      return location.pathname === "/consultant";
     }
     return location.pathname.startsWith(path);
   };
@@ -71,10 +65,10 @@ const ManagerSidebar = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
+              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">C</span>
               </div>
-              <span className="text-lg font-bold text-gray-900">Manager Panel</span>
+              <span className="text-lg font-bold text-gray-900">Chuyên viên</span>
             </div>
             <button
               onClick={onClose}
@@ -107,7 +101,7 @@ const ManagerSidebar = ({ isOpen, onClose }) => {
                   onClick={onClose}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
                     isActive(item.path)
-                      ? "bg-blue-100 text-blue-700 border-r-2 border-blue-600"
+                      ? "bg-green-100 text-green-700 border-r-2 border-green-600"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -131,4 +125,4 @@ const ManagerSidebar = ({ isOpen, onClose }) => {
   );
 };
 
-export default ManagerSidebar; 
+export default ConsultantSidebar;

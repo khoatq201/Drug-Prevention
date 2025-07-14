@@ -3,10 +3,11 @@ const router = express.Router();
 const Counselor = require("../models/Counselor");
 const User = require("../models/User");
 const Appointment = require("../models/Appointment");
-const { auth, authorize } = require("../middleware/auth");
+const { auth, authorize, optionalAuth } = require("../middleware/auth");
+const bcrypt = require("bcryptjs");
 
-// Get all counselors with filtering
-router.get("/", async (req, res) => {
+// Get all counselors with filtering (public + manager)
+router.get("/", optionalAuth, async (req, res) => {
   try {
     const {
       specialization,
@@ -17,13 +18,27 @@ router.get("/", async (req, res) => {
       page = 1,
       limit = 12,
       search,
+      status,
+      verificationStatus,
     } = req.query;
 
-    let query = {
-      status: "active",
-      "verificationStatus.isVerified": true,
-      "settings.isPublicProfile": true,
-    };
+    let query = {};
+
+    // For manager and above, show all counselors regardless of verification status
+    if (req.user && req.user.hasPermission && req.user.hasPermission("manager")) {
+      // Managers can see all counselors
+      if (status) query.status = status;
+      if (verificationStatus === "verified") {
+        query["verificationStatus.isVerified"] = true;
+      } else if (verificationStatus === "pending") {
+        query["verificationStatus.isVerified"] = false;
+      }
+    } else {
+      // For public access, only show verified and active counselors
+      query.status = "active";
+      query["verificationStatus.isVerified"] = true;
+      query["settings.isPublicProfile"] = true;
+    }
 
     // Apply filters
     if (specialization) query.specializations = specialization;
@@ -37,6 +52,7 @@ router.get("/", async (req, res) => {
         $or: [
           { firstName: { $regex: search, $options: "i" } },
           { lastName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
         ],
       };
       
@@ -52,10 +68,16 @@ router.get("/", async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    // Build select fields based on permissions
+    let selectFields = "";
+    if (!(req.user && req.user.hasPermission && req.user.hasPermission("manager"))) {
+      selectFields = "-reviews -notes";
+    }
+
     const counselors = await Counselor.find(query)
-      .populate("userId", "firstName lastName email avatar")
-      .select("-reviews -notes")
-      .sort({ "performance.averageRating": -1, "performance.totalReviews": -1 })
+      .populate("userId", "firstName lastName email avatar phone")
+      .select(selectFields)
+      .sort({ "performance.averageRating": -1, "performance.totalReviews": -1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
 
@@ -76,6 +98,8 @@ router.get("/", async (req, res) => {
         clientType,
         minRating,
         search,
+        status,
+        verificationStatus,
       },
     });
   } catch (error) {
@@ -132,6 +156,147 @@ router.get("/search", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Lỗi khi tìm kiếm chuyên viên tư vấn",
+    });
+  }
+});
+
+// Get counselor by user ID
+router.get("/user/:userId", auth, async (req, res) => {
+  try {
+    const counselor = await Counselor.findOne({ userId: req.params.userId })
+      .populate("userId", "firstName lastName email phone avatar");
+
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy hồ sơ chuyên viên",
+      });
+    }
+
+    // Check access permissions
+    const canAccess = 
+      req.user._id.toString() === req.params.userId ||
+      req.user.hasPermission("staff");
+    
+    if (!canAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền truy cập hồ sơ này",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: counselor,
+    });
+  } catch (error) {
+    console.error("Get counselor by user ID error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thông tin chuyên viên tư vấn",
+    });
+  }
+});
+
+// Get counselor schedule by user ID
+router.get("/user/:userId/schedule", auth, async (req, res) => {
+  try {
+    const { date, month } = req.query;
+    
+    const counselor = await Counselor.findOne({ userId: req.params.userId })
+      .select("availability sessionSettings");
+
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy chuyên viên tư vấn",
+      });
+    }
+
+    let scheduleData = counselor.availability;
+
+    // If specific date requested, get available slots
+    if (date) {
+      const requestedDate = new Date(date);
+      const availableSlots = counselor.getAvailableSlots(requestedDate);
+      
+      // Get existing appointments for the date
+      const existingAppointments = await Appointment.find({
+        counselorId: req.params.userId, // Use userId since appointments reference User
+        appointmentDate: {
+          $gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
+          $lte: new Date(requestedDate.setHours(23, 59, 59, 999)),
+        },
+        status: { $in: ["pending", "confirmed"] },
+      }).select("appointmentTime");
+
+      // Filter out booked slots
+      const bookedTimes = existingAppointments.map(apt => apt.appointmentTime.start);
+      const freeSlots = availableSlots.filter(slot => 
+        !bookedTimes.includes(slot.start)
+      );
+
+      scheduleData = {
+        date: requestedDate,
+        availableSlots: freeSlots,
+        bookedSlots: bookedTimes,
+        sessionSettings: counselor.sessionSettings,
+      };
+    }
+
+    res.json({
+      success: true,
+      data: scheduleData,
+    });
+  } catch (error) {
+    console.error("Get schedule by user ID error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy lịch trình",
+    });
+  }
+});
+
+// Force refresh counselor stats
+router.post("/:id/refresh-stats", auth, authorize("staff"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Recalculate stats
+    const totalSessions = await Appointment.countDocuments({ 
+      counselorId: id,
+      status: 'completed'
+    });
+    
+    const totalAppointments = await Appointment.countDocuments({ 
+      counselorId: id
+    });
+    
+    const completionRate = totalAppointments > 0 ? Math.round((totalSessions / totalAppointments) * 100) : 0;
+    
+    // Update counselor stats
+    await Counselor.findByIdAndUpdate(id, {
+      $set: {
+        'performance.totalSessions': totalSessions,
+        'performance.totalClients': totalSessions,
+        'performance.completionRate': completionRate
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: "Thống kê đã được cập nhật",
+      data: {
+        totalSessions,
+        totalAppointments,
+        completionRate
+      }
+    });
+  } catch (error) {
+    console.error("Refresh stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật thống kê"
     });
   }
 });
@@ -304,6 +469,155 @@ router.post("/", auth, authorize("staff"), async (req, res) => {
   }
 });
 
+// Create counselor with user account (manager and above)
+router.post("/create-with-user", auth, authorize("manager"), async (req, res) => {
+  try {
+    const {
+      // User data
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      dateOfBirth,
+      gender,
+      ageGroup,
+      // Counselor data
+      biography,
+      specializations,
+      languages,
+      experience,
+      education,
+      certifications,
+      areasOfExpertise,
+      availability,
+      sessionSettings,
+      settings,
+    } = req.body;
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email đã tồn tại trong hệ thống",
+      });
+    }
+
+    // Create user with consultant role
+    const userData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender,
+      role: "consultant",
+      ageGroup: ageGroup || "other",
+      isActive: true,
+      isEmailVerified: true, // Auto-verify for manager-created users
+    };
+
+    // Add password if provided
+    if (password) {
+      userData.password = password;
+    } else {
+      // Generate a default password
+      userData.password = `Consultant@${Date.now()}`;
+    }
+
+    const user = new User(userData);
+    await user.save();
+
+    // Create counselor profile
+    const counselorProfile = new Counselor({
+      userId: user._id,
+      biography: biography || "",
+      specializations: specializations || [],
+      languages: languages || [{ language: "vi", proficiency: "native" }],
+      experience: experience || {
+        totalYears: 0,
+        workHistory: []
+      },
+      education: education || [],
+      certifications: certifications || [],
+      areasOfExpertise: areasOfExpertise || [],
+      availability: availability || {
+        workingHours: {
+          monday: { isAvailable: true, slots: [{ start: "09:00", end: "17:00" }] },
+          tuesday: { isAvailable: true, slots: [{ start: "09:00", end: "17:00" }] },
+          wednesday: { isAvailable: true, slots: [{ start: "09:00", end: "17:00" }] },
+          thursday: { isAvailable: true, slots: [{ start: "09:00", end: "17:00" }] },
+          friday: { isAvailable: true, slots: [{ start: "09:00", end: "17:00" }] },
+          saturday: { isAvailable: false, slots: [] },
+          sunday: { isAvailable: false, slots: [] },
+        },
+        exceptions: []
+      },
+      sessionSettings: sessionSettings || {
+        defaultDuration: 60,
+        breakBetweenSessions: 15,
+        maxAppointmentsPerDay: 8,
+        advanceBookingDays: 30
+      },
+      contactPreferences: {
+        preferredContactMethod: "email",
+        businessEmail: user.email,
+        businessPhone: user.phone || ""
+      },
+      settings: settings || {
+        isPublicProfile: true,
+        allowOnlineConsultations: true,
+        autoConfirmAppointments: false,
+        sendReminders: true
+      },
+      verificationStatus: {
+        isVerified: true, // Auto-verify for manager-created counselors
+        verifiedAt: new Date(),
+        verifiedBy: req.user._id,
+        documents: []
+      },
+      status: "active"
+    });
+    
+    await counselorProfile.save();
+    await counselorProfile.populate("userId", "firstName lastName email");
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo tài khoản và hồ sơ chuyên viên thành công",
+      data: {
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        counselor: counselorProfile,
+        temporaryPassword: password ? undefined : userData.password // Only return if auto-generated
+      },
+    });
+  } catch (error) {
+    console.error("Create counselor with user error:", error);
+    
+    // If user was created but counselor failed, delete the user
+    if (error.message && error.message.includes("counselor")) {
+      try {
+        await User.findOneAndDelete({ email: req.body.email });
+      } catch (deleteError) {
+        console.error("Failed to rollback user creation:", deleteError);
+      }
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi tạo tài khoản chuyên viên",
+      error: error.message,
+    });
+  }
+});
+
 // Update counselor profile
 router.put("/:id", auth, async (req, res) => {
   try {
@@ -353,6 +667,60 @@ router.put("/:id", auth, async (req, res) => {
       success: false,
       message: "Lỗi khi cập nhật hồ sơ",
       error: error.message,
+    });
+  }
+});
+
+// Update counselor schedule by user ID
+router.put("/user/:userId/schedule", auth, async (req, res) => {
+  try {
+    const counselor = await Counselor.findOne({ userId: req.params.userId });
+
+    if (!counselor) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy hồ sơ chuyên viên",
+      });
+    }
+
+    // Check permissions
+    if (req.user._id.toString() !== req.params.userId && 
+        !req.user.hasPermission("manager")) {
+      return res.status(403).json({
+        success: false,
+        message: "Không có quyền chỉnh sửa lịch trình này",
+      });
+    }
+
+    const { workingHours, exceptions, sessionSettings } = req.body;
+
+    if (workingHours) {
+      counselor.availability.workingHours = workingHours;
+    }
+
+    if (exceptions) {
+      counselor.availability.exceptions = exceptions;
+    }
+
+    if (sessionSettings) {
+      counselor.sessionSettings = { ...counselor.sessionSettings, ...sessionSettings };
+    }
+
+    await counselor.save();
+
+    res.json({
+      success: true,
+      message: "Lịch trình đã được cập nhật thành công",
+      data: {
+        availability: counselor.availability,
+        sessionSettings: counselor.sessionSettings,
+      },
+    });
+  } catch (error) {
+    console.error("Update schedule error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật lịch trình",
     });
   }
 });

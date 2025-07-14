@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaGoogle } from "react-icons/fa";
 
-const GoogleLoginButton = ({ onSuccess, onError }) => {
+const GoogleLoginButton = ({ onError }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = () => {

@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sync-counselors": "node scripts/syncCounselorProfiles.js",
+    "check-data": "node scripts/checkDataConsistency.js",
+    "seed": "node scripts/seedData.js"
   },
   "keywords": [],
   "author": "",
