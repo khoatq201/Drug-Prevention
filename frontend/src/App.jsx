@@ -405,12 +405,13 @@ function App() {
                 path="/courses/:id/lessons/:lessonId"
                 element={<Lesson />}
               />
-              path="/admin/modules-lessons" element=
-              {
-                <ProtectedRoute>
-                  <AdminModulesLessons />
-                </ProtectedRoute>
-              }
+              <Route
+                path="/admin/modules-lessons"
+                element={
+                  <ProtectedRoute>
+                    <AdminModulesLessons />
+                  </ProtectedRoute>
+                }
               />
               <Route path="/appointments" element={<Appointments />} />
               <Route
