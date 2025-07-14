@@ -46,6 +46,10 @@ const courseSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isVisible: {
+      type: Boolean,
+      default: true,
+    },
     modules: [
       {
         title: {
@@ -57,6 +61,10 @@ const courseSchema = new mongoose.Schema(
         order: {
           type: Number,
           required: true,
+        },
+        isVisible: {
+          type: Boolean,
+          default: true,
         },
         lessons: [
           {
@@ -89,6 +97,10 @@ const courseSchema = new mongoose.Schema(
             order: {
               type: Number,
               required: true,
+            },
+            isVisible: {
+              type: Boolean,
+              default: true,
             },
           },
         ],
