@@ -4,6 +4,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
+// Load environment variables
+dotenv.config();
+
 const session = require("express-session");
 const passport = require("./config/passport");
 
@@ -16,9 +19,6 @@ const appointmentRoutes = require("./routes/appointments");
 const programRoutes = require("./routes/programs");
 const counselorRoutes = require("./routes/counselors");
 const blogRoutes = require("./routes/blogs");
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
