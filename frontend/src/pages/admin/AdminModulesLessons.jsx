@@ -236,6 +236,10 @@ const AdminModulesLessons = () => {
     }
   };
 
+  // Filter visible modules and lessons before rendering
+  const visibleModules = modules.filter(m => m.isVisible !== false);
+  const visibleLessons = lessons.filter(l => l.isVisible !== false);
+
   // UI rendering
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -275,11 +279,11 @@ const AdminModulesLessons = () => {
                   Thêm module
                 </button>
               </div>
-              {modules.length === 0 ? (
+              {visibleModules.length === 0 ? (
                 <div className="text-gray-500 text-center py-8">Chưa có module nào cho khóa học này.</div>
               ) : (
                 <ul className="space-y-2">
-                  {modules.map((module) => (
+                  {visibleModules.map((module) => (
                     <li
                       key={module._id}
                       className={`p-3 bg-white rounded shadow flex justify-between items-center transition-all duration-200 cursor-pointer border
@@ -366,7 +370,7 @@ const AdminModulesLessons = () => {
                 </button>
               </div>
               <ul className="space-y-2">
-                {lessons.map((lesson) => (
+                {visibleLessons.map((lesson) => (
                   <li key={lesson._id} className="p-3 bg-white rounded shadow flex justify-between items-center hover:bg-green-50 transition-all duration-200">
                     <span className="font-medium text-gray-900">{lesson.title}</span>
                     <div className="flex items-center space-x-2">

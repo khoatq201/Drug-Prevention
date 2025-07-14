@@ -22,6 +22,7 @@ router.get("/", async (req, res) => {
     let query = {
       isPublished: true,
       "enrollment.isOpen": true,
+      isVisible: { $ne: false },
     };
 
     // Only filter by language if specified
@@ -92,6 +93,7 @@ router.get("/categories", async (req, res) => {
     let matchConditions = {
       isPublished: true,
       "enrollment.isOpen": true,
+      isVisible: { $ne: false },
     };
     
     if (ageGroup) {
@@ -173,6 +175,7 @@ router.get("/search", async (req, res) => {
       isPublished: true,
       "enrollment.isOpen": true,
       language,
+      isVisible: { $ne: false },
     };
 
     // Search query
@@ -302,9 +305,9 @@ router.get("/:id/enrollment", auth, async (req, res) => {
 // Get course by ID
 router.get("/:id", async (req, res) => {
   try {
-    const course = await Course.findById(req.params.id);
+    let course = await Course.findById(req.params.id);
 
-    if (!course) {
+    if (!course || course.isVisible === false) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy khóa học",
@@ -328,6 +331,7 @@ router.get("/:id", async (req, res) => {
 
     // Hide detailed lesson content for non-enrolled users
     let courseData = course.toObject();
+    courseData = filterVisibleCourse(courseData);
     
     if (!req.user) {
       // For non-authenticated users, only show basic info
@@ -641,19 +645,26 @@ router.put("/:id", auth, authorize("admin"), async (req, res) => {
 // Delete course (admin only)
 router.delete("/:id", auth, authorize("admin"), async (req, res) => {
   try {
-    const course = await Course.findByIdAndUpdate(
-      req.params.id,
-      { isPublished: false, "enrollment.isOpen": false },
-      { new: true }
-    );
-
-    if (!course) {
+    const course = await Course.findById(req.params.id);
+    if (!course || course.isVisible === false) {
       return res.status(404).json({
         success: false,
         message: "Không tìm thấy khóa học",
       });
     }
-
+    // Check for visible modules
+    const hasVisibleModules = (course.modules || []).some(m => m.isVisible !== false);
+    if (hasVisibleModules) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa khóa học khi vẫn còn module. Hãy xóa tất cả module trước.",
+      });
+    }
+    // Soft delete: set isVisible to false, isPublished to false, enrollment.isOpen to false
+    course.isVisible = false;
+    course.isPublished = false;
+    course.enrollment.isOpen = false;
+    await course.save();
     res.json({
       success: true,
       message: "Khóa học đã được xóa thành công",
@@ -744,7 +755,7 @@ router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
       isPublished,
     } = req.query;
 
-    let query = {};
+    let query = { isVisible: { $ne: false } };
     if (language) query.language = language;
     if (category) query.category = category;
     if (level) query.level = level;
@@ -765,13 +776,15 @@ router.get("/admin/all", auth, authorize("admin"), async (req, res) => {
       .limit(parseInt(limit))
       .skip(skip);
     const total = await Course.countDocuments(query);
+    // Filter modules/lessons for visibility
+    const filteredCourses = courses.map(c => filterVisibleCourse(c.toObject ? c.toObject() : c));
     res.json({
       success: true,
-      data: courses,
+      data: filteredCourses,
       pagination: {
         current: parseInt(page),
         total: Math.ceil(total / limit),
-        count: courses.length,
+        count: filteredCourses.length,
         totalResults: total,
       },
       filters: {
@@ -827,15 +840,23 @@ router.put("/:id/modules/:moduleId", auth, authorize("admin"), async (req, res) 
   }
 });
 
-// Admin: Delete a module from a course
+// Admin: Delete a module from a course (soft delete)
 router.delete("/:id/modules/:moduleId", auth, authorize("admin"), async (req, res) => {
   try {
     const { id, moduleId } = req.params;
     const course = await Course.findById(id);
-    if (!course) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
+    if (!course || course.isVisible === false) return res.status(404).json({ success: false, message: "Không tìm thấy khóa học" });
     const module = course.modules.id(moduleId);
-    if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
-    module.remove();
+    if (!module || module.isVisible === false) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
+    // Check for visible lessons
+    const hasVisibleLessons = (module.lessons || []).some(l => l.isVisible !== false);
+    if (hasVisibleLessons) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể xóa module khi vẫn còn bài học. Hãy xóa tất cả bài học trước.",
+      });
+    }
+    module.isVisible = false;
     await course.save();
     res.json({ success: true, message: "Đã xóa module" });
   } catch (error) {
@@ -896,7 +917,7 @@ router.put("/:id/modules/:moduleId/lessons/:lessonId", auth, authorize("admin"),
   }
 });
 
-// Admin: Delete a lesson from a module
+// Admin: Delete a lesson from a module (soft delete)
 router.delete("/:id/modules/:moduleId/lessons/:lessonId", auth, authorize("admin"), async (req, res) => {
   try {
     const { id, moduleId, lessonId } = req.params;
@@ -906,7 +927,7 @@ router.delete("/:id/modules/:moduleId/lessons/:lessonId", auth, authorize("admin
     if (!module) return res.status(404).json({ success: false, message: "Không tìm thấy module" });
     const lesson = module.lessons.id(lessonId);
     if (!lesson) return res.status(404).json({ success: false, message: "Không tìm thấy bài học" });
-    lesson.remove();
+    lesson.isVisible = false;
     await course.save();
     res.json({ success: true, message: "Đã xóa bài học" });
   } catch (error) {
@@ -931,5 +952,16 @@ router.put("/:id/modules/:moduleId/lessons/reorder", auth, authorize("admin"), a
     res.status(500).json({ success: false, message: "Lỗi khi sắp xếp bài học", error: error.message });
   }
 });
+
+// Filter out invisible items utility
+function filterVisibleCourse(course) {
+  if (!course) return course;
+  // Filter modules
+  course.modules = (course.modules || []).filter(m => m.isVisible !== false).map(module => ({
+    ...module.toObject ? module.toObject() : module,
+    lessons: (module.lessons || []).filter(l => l.isVisible !== false),
+  }));
+  return course;
+}
 
 module.exports = router;
