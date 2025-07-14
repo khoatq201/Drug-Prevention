@@ -55,7 +55,7 @@ const Courses = () => {
     console.log("🔍 useEffect authLoading changed:", authLoading);
     console.log("🔍 Current user:", user);
     console.log("🔍 Current isAuthenticated:", isAuthenticated);
-    
+
     // Chỉ fetch khi auth loading hoàn thành và chưa fetch lần đầu
     if (!authLoading && !hasInitialFetchRef.current) {
       // Nếu có token, đợi user data load xong
@@ -83,15 +83,18 @@ const Courses = () => {
     console.log("🚀 fetchCourses called");
     console.log("🚀 authLoading:", authLoading);
     console.log("🚀 hasInitialFetchRef.current:", hasInitialFetchRef.current);
-    console.log("🚀 localStorage token:", localStorage.getItem("token") ? "exists" : "missing");
-    
+    console.log(
+      "🚀 localStorage token:",
+      localStorage.getItem("token") ? "exists" : "missing"
+    );
+
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (selectedCategory) params.append("category", selectedCategory);
       if (selectedLevel) params.append("level", selectedLevel);
       if (searchTerm) params.append("search", searchTerm);
-      
+
       // Chỉ gửi ageGroup nếu user đã đăng nhập và có ageGroup
       if (isAuthenticated && user?.ageGroup) {
         params.append("ageGroup", user.ageGroup);
@@ -101,7 +104,10 @@ const Courses = () => {
       console.log("🔍 User:", user);
       console.log("🔍 IsAuthenticated:", isAuthenticated);
       const response = await api.get(`/courses?${params.toString()}`);
-      console.log("🔍 Response courses count:", response.data.data?.length || 0);
+      console.log(
+        "🔍 Response courses count:",
+        response.data.data?.length || 0
+      );
       setCourses(response.data.data || []);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -147,7 +153,7 @@ const Courses = () => {
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
+    visible: { opacity: 1, y: 0 },
   };
 
   const staggerContainer = {
@@ -155,13 +161,13 @@ const Courses = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gray-50 py-12"
       initial="hidden"
       animate="visible"
@@ -175,13 +181,16 @@ const Courses = () => {
             Khóa học đào tạo
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Nâng cao kiến thức và kỹ năng phòng chống ma túy thông qua các khóa học
-            chuyên nghiệp được thiết kế phù hợp với từng độ tuổi.
+            Nâng cao kiến thức và kỹ năng phòng chống ma túy thông qua các khóa
+            học chuyên nghiệp được thiết kế phù hợp với từng độ tuổi.
           </p>
         </motion.div>
 
         {/* Search and Filters */}
-        <motion.div className="bg-white rounded-lg shadow-md p-6 mb-8" variants={fadeInUp}>
+        <motion.div
+          className="bg-white rounded-lg shadow-md p-6 mb-8"
+          variants={fadeInUp}
+        >
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
@@ -234,7 +243,7 @@ const Courses = () => {
 
           {/* Mobile Filters */}
           {showFilters && (
-            <motion.div 
+            <motion.div
               className="lg:hidden mt-4 pt-4 border-t border-gray-200"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -275,7 +284,7 @@ const Courses = () => {
             <div className="spinner"></div>
           </div>
         ) : courses.length > 0 ? (
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={staggerContainer}
           >
@@ -296,10 +305,12 @@ const Courses = () => {
                     />
                   </div>
                 )}
-                
-                <div className="p-6 flex flex-col flex-1">
+
+                <div className="p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`course-level ${getLevelStyle(course.level)}`}>
+                    <span
+                      className={`course-level ${getLevelStyle(course.level)}`}
+                    >
                       {getLevelText(course.level)}
                     </span>
                     <div className="flex items-center text-yellow-500">
@@ -313,7 +324,7 @@ const Courses = () => {
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
                     {course.title}
                   </h3>
-                  
+
                   <p className="text-gray-600 mb-4 line-clamp-3 flex-1">
                     {course.description}
                   </p>
@@ -329,14 +340,14 @@ const Courses = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1" />
+                  <div className="flex items-center justify-between mt-2">
                     <div className="text-lg font-bold text-green-600">
-                      {course.pricing.price === 0 ? "Miễn phí" : `${course.pricing.price?.toLocaleString()}đ`}
+                      {course.pricing.price === 0
+                        ? "Miễn phí"
+                        : `${course.pricing.price?.toLocaleString()}đ`}
                     </div>
-                    <Link
-                      to={`/courses/${course._id}`}
-                      className="btn-primary"
-                    >
+                    <Link to={`/courses/${course._id}`} className="btn-primary">
                       <PlayIcon className="w-4 h-4 mr-1" />
                       Bắt đầu
                     </Link>
@@ -346,10 +357,7 @@ const Courses = () => {
             ))}
           </motion.div>
         ) : (
-          <motion.div 
-            className="text-center py-12"
-            variants={fadeInUp}
-          >
+          <motion.div className="text-center py-12" variants={fadeInUp}>
             <BookOpenIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               Không tìm thấy khóa học
@@ -371,7 +379,7 @@ const Courses = () => {
         )}
 
         {/* Statistics */}
-        <motion.div 
+        <motion.div
           className="mt-16 bg-white rounded-lg shadow-md p-8"
           variants={fadeInUp}
         >
@@ -381,7 +389,9 @@ const Courses = () => {
               <div className="text-gray-600">Khóa học</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">2,500+</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                2,500+
+              </div>
               <div className="text-gray-600">Học viên</div>
             </div>
             <div>
@@ -397,7 +407,7 @@ const Courses = () => {
 
         {/* CTA Section */}
         {!isAuthenticated && (
-          <motion.div 
+          <motion.div
             className="text-center mt-12 bg-green-600 text-white rounded-lg p-8"
             variants={fadeInUp}
           >
@@ -409,10 +419,16 @@ const Courses = () => {
               kết nối với cộng đồng học viên.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/register" className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200">
+              <Link
+                to="/register"
+                className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200"
+              >
                 Đăng ký miễn phí
               </Link>
-              <Link to="/login" className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-green-600 transition-all duration-200">
+              <Link
+                to="/login"
+                className="border-2 border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-green-600 transition-all duration-200"
+              >
                 Đăng nhập
               </Link>
             </div>

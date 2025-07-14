@@ -31,6 +31,11 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       icon: AcademicCapIcon,
     },
     {
+      name: "Quản lý module/bài học",
+      path: "/admin/modules-lessons",
+      icon: ClipboardDocumentListIcon,
+    },
+    {
       name: "Quản lý đánh giá",
       path: "/admin/assessments",
       icon: ClipboardDocumentListIcon,

@@ -50,6 +50,7 @@ import ConsultantClients from "./pages/consultant/ConsultantClients";
 import ConsultantProfile from "./pages/consultant/ConsultantProfile";
 import ConsultantDashboard from "./pages/ConsultantDashboard";
 import TestAuth from "./pages/TestAuth";
+import AdminModulesLessons from "./pages/admin/AdminModulesLessons";
 import "./App.css";
 
 function App() {
@@ -126,7 +127,6 @@ function App() {
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:id" element={<BlogPost />} />
               <Route path="/test-auth" element={<TestAuth />} />
-
               {/* Protected Routes */}
               <Route
                 path="/profile/complete"
@@ -264,7 +264,6 @@ function App() {
                   </ManagerRoute>
                 }
               />
-              
               {/* Consultant Routes */}
               <Route
                 path="/consultant"
@@ -402,11 +401,28 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
+              <Route
+                path="/courses/:id/lessons/:lessonId"
+                element={<Lesson />}
+              />
+              path="/admin/modules-lessons" element=
+              {
+                <ProtectedRoute>
+                  <AdminModulesLessons />
+                </ProtectedRoute>
+              }
+              />
+              <Route path="/appointments" element={<Appointments />} />
+              <Route
+                path="/appointments/book"
+                element={<AppointmentBooking />}
+              />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/courses/:id/lessons/:lessonId" element={<Lesson />} />
-
+              <Route
+                path="/courses/:id/lessons/:lessonId"
+                element={<Lesson />}
+              />
               {/* 404 Page */}
               <Route path="*" element={<NotFound />} />
             </Routes>
