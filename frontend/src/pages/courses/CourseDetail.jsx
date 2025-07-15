@@ -56,7 +56,7 @@ const CourseDetail = () => {
       setLoading(true);
       const response = await api.get(`/courses/${id}`);
       if (response.data.success) {
-        setCourse(response.data.data);
+        setCourse(filterVisibleCourse(response.data.data));
       }
     } catch (error) {
       console.error("Error fetching course:", error);
@@ -197,12 +197,26 @@ const CourseDetail = () => {
     return completedLessons.includes(previousLessonId);
   };
 
+  // Utility to filter visible modules and lessons
+  const filterVisibleCourse = (course) => {
+    if (!course) return course;
+    const visibleModules = (course.modules || []).filter(m => m.isVisible !== false);
+    return {
+      ...course,
+      modules: visibleModules.map(module => ({
+        ...module,
+        lessons: (module.lessons || []).filter(l => l.isVisible !== false),
+      })),
+    };
+  };
+
   const getProgress = () => {
     if (!enrollment || !course?.modules) return 0;
     const allLessons = course.modules.flatMap(m => m.lessons || []);
+    const visibleLessons = allLessons.filter(l => l.isVisible !== false);
     const completedLessons = enrollment.progress?.completedLessons || [];
-    return allLessons.length > 0
-      ? Math.round((completedLessons.length / allLessons.length) * 100)
+    return visibleLessons.length > 0
+      ? Math.round((completedLessons.filter(id => visibleLessons.some(l => l._id === id)).length / visibleLessons.length) * 100)
       : 0;
   };
 

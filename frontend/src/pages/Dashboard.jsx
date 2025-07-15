@@ -114,7 +114,8 @@ const Dashboard = () => {
       const response = await api.get(`/courses/user/${user?._id}/enrolled`);
       console.log('Enrolled courses response:', response.data);
       if (response.data.success) {
-        setEnrolledCourses(response.data.data || []);
+        // Only set courses that are visible
+        setEnrolledCourses((response.data.data || []).filter(c => (c.courseId ? c.courseId.isVisible !== false : c.isVisible !== false)));
       }
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
@@ -189,6 +190,19 @@ const Dashboard = () => {
         staggerChildren: 0.1
       }
     }
+  };
+
+  // Utility to filter visible modules and lessons
+  const filterVisibleCourse = (course) => {
+    if (!course) return course;
+    const visibleModules = (course.modules || []).filter(m => m.isVisible !== false);
+    return {
+      ...course,
+      modules: visibleModules.map(module => ({
+        ...module,
+        lessons: (module.lessons || []).filter(l => l.isVisible !== false),
+      })),
+    };
   };
 
   if (!isAuthenticated) {
@@ -370,10 +384,11 @@ const Dashboard = () => {
                     {enrolledCourses.map((enrollment) => {
                       const course = enrollment.courseId || enrollment;
                       // Flatten all lessons from all modules
-                      const allLessons = course.modules?.flatMap(m => m.lessons || []) || [];
+                      const allLessons = (course.modules || []).flatMap(m => m.lessons || []);
                       const completedLessons = enrollment.progress?.completedLessons || [];
-                      const progress = allLessons.length > 0
-                        ? Math.round((completedLessons.length / allLessons.length) * 100)
+                      const visibleLessons = allLessons.filter(l => l.isVisible !== false);
+                      const progress = visibleLessons.length > 0
+                        ? Math.round((completedLessons.filter(id => visibleLessons.some(l => l._id === id)).length / visibleLessons.length) * 100)
                         : 0;
                       return (
                         <div key={course._id} className="border border-gray-200 rounded-lg p-4">

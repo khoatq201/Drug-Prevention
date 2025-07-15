@@ -435,36 +435,24 @@ router.post("/:id/enroll", auth, async (req, res) => {
     }
 
     // Enroll user
-    const updatedUser = await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(req.user._id, {
       $push: {
         courseHistory: {
           courseId: course._id,
           enrolledAt: new Date(),
-          progress: { completedLessons: [], percent: 0 },
+          progress: 0,
         },
       },
-    }, { new: true });
+    });
 
     // Update course enrollment count
     await Course.findByIdAndUpdate(course._id, {
       $inc: { "enrollment.currentEnrollment": 1 },
     });
 
-    // Get the enrollment data that was just created
-    const enrollment = updatedUser.courseHistory.find(
-      (enrollment) => enrollment.courseId.toString() === course._id.toString()
-    );
-
     res.json({
       success: true,
       message: "Đăng ký khóa học thành công",
-      data: {
-        courseId: course._id,
-        userId: req.user._id,
-        enrolledAt: enrollment.enrolledAt,
-        status: "enrolled",
-        progress: enrollment.progress || { completedLessons: [], percent: 0 },
-      },
     });
   } catch (error) {
     console.error("Enroll course error:", error);
@@ -592,8 +580,8 @@ router.get("/user/:userId/enrolled", auth, async (req, res) => {
   }
 });
 
-// Create new course (admin & manager)
-router.post("/", auth, authorize("admin", "manager"), async (req, res) => {
+// Create new course (admin only)
+router.post("/", auth, authorize("admin"), async (req, res) => {
   try {
     const course = new Course({
       ...req.body,
@@ -617,8 +605,8 @@ router.post("/", auth, authorize("admin", "manager"), async (req, res) => {
   }
 });
 
-// Update course (admin & manager)
-router.put("/:id", auth, authorize("admin", "manager"), async (req, res) => {
+// Update course (admin only)
+router.put("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const updateData = { ...req.body };
     
@@ -654,8 +642,8 @@ router.put("/:id", auth, authorize("admin", "manager"), async (req, res) => {
   }
 });
 
-// Delete course (admin & manager)
-router.delete("/:id", auth, authorize("admin", "manager"), async (req, res) => {
+// Delete course (admin only)
+router.delete("/:id", auth, authorize("admin"), async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course || course.isVisible === false) {
@@ -751,94 +739,6 @@ router.get("/stats/overview", auth, authorize("staff"), async (req, res) => {
     });
   }
 });
-// Admin/Manager: Get all courses with admin filters
-router.get("/admin/all", auth, authorize("admin", "manager"), async (req, res) => {
-  try {
-    const {
-      category,
-      level,
-      isPublished,
-      search,
-      page = 1,
-      limit = 20,
-      sort = "-createdAt",
-    } = req.query;
-
-    let query = {};
-
-    // Apply filters
-    if (category) query.category = category;
-    if (level) query.level = level;
-    if (isPublished !== undefined && isPublished !== "") {
-      query.isPublished = isPublished === "true";
-    }
-
-    // Search functionality
-    if (search) {
-      query.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { tags: { $in: [new RegExp(search, "i")] } },
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-
-    // Sort options
-    let sortOptions = {};
-    switch (sort) {
-      case "title":
-        sortOptions = { title: 1 };
-        break;
-      case "category":
-        sortOptions = { category: 1 };
-        break;
-      case "level":
-        sortOptions = { level: 1 };
-        break;
-      case "oldest":
-        sortOptions = { createdAt: 1 };
-        break;
-      default:
-        sortOptions = { createdAt: -1 };
-    }
-
-    const courses = await Course.find(query)
-      .select("-modules.quiz")
-      .sort(sortOptions)
-      .limit(parseInt(limit))
-      .skip(skip);
-
-    const total = await Course.countDocuments(query);
-
-    res.json({
-      success: true,
-      data: courses,
-      pagination: {
-        current: parseInt(page),
-        total: Math.ceil(total / limit),
-        count: courses.length,
-        totalResults: total,
-      },
-      filters: {
-        category,
-        level,
-        isPublished,
-        search,
-        sort,
-      },
-    });
-  } catch (error) {
-    console.error("Get admin courses error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi lấy danh sách khóa học",
-    });
-  }
-});
-
-
-
 
 // Admin: Get all courses (published and unpublished) with filtering and pagination
 router.get("/admin/all", auth, authorize("admin"), async (req, res) => {

@@ -334,13 +334,8 @@ const Courses = () => {
                       <ClockIcon className="w-4 h-4 mr-1" />
                       <span>{formatDuration(course.duration)}</span>
                     </div>
-                    <div className="flex items-center">
-                      <UserGroupIcon className="w-4 h-4 mr-1" />
-                      <span>{course.enrollmentCount || 0} học viên</span>
-                    </div>
                   </div>
 
-                  <div className="flex-1" />
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-lg font-bold text-green-600">
                       {course.pricing.price === 0
