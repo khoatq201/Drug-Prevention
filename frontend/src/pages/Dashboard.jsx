@@ -114,8 +114,8 @@ const Dashboard = () => {
       const response = await api.get(`/courses/user/${user?._id}/enrolled`);
       console.log('Enrolled courses response:', response.data);
       if (response.data.success) {
-        // Only set courses that are visible
-        setEnrolledCourses((response.data.data || []).filter(c => (c.courseId ? c.courseId.isVisible !== false : c.isVisible !== false)));
+        // Show all courses, including isVisible false
+        setEnrolledCourses(response.data.data || []);
       }
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
@@ -390,6 +390,7 @@ const Dashboard = () => {
                       const progress = visibleLessons.length > 0
                         ? Math.round((completedLessons.filter(id => visibleLessons.some(l => l._id === id)).length / visibleLessons.length) * 100)
                         : 0;
+                      const isDeleted = course.isVisible === false;
                       return (
                         <div key={course._id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-start justify-between mb-3">
@@ -408,6 +409,11 @@ const Dashboard = () => {
                                 Đang học
                               </span>
                             )}
+                            {isDeleted && (
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-200 text-gray-600 rounded-full ml-2">
+                                Đã xóa (outdated)
+                              </span>
+                            )}
                           </div>
                           
                           <div className="mb-3">
@@ -423,13 +429,20 @@ const Dashboard = () => {
                             </div>
                           </div>
                           
-                          <Link
-                            to={`/courses/${course._id}`}
-                            className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            {progress === 100 ? 'Xem lại' : 'Tiếp tục học'}
-                            <ArrowRightIcon className="w-4 h-4 ml-1" />
-                          </Link>
+                          {!isDeleted ? (
+                            <Link
+                              to={`/courses/${course._id}`}
+                              className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            >
+                              {progress === 100 ? 'Xem lại' : 'Tiếp tục học'}
+                              <ArrowRightIcon className="w-4 h-4 ml-1" />
+                            </Link>
+                          ) : (
+                            <span className="inline-flex items-center text-gray-400 text-sm font-medium cursor-not-allowed opacity-60">
+                              Không khả dụng
+                              <ArrowRightIcon className="w-4 h-4 ml-1" />
+                            </span>
+                          )}
                         </div>
                       );
                     })}
