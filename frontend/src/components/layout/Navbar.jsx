@@ -78,15 +78,15 @@ const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-4">
               <motion.div
-                className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center"
+                className="w-16 h-16 bg-green-600 rounded-lg flex items-center justify-center"
                 whileHover={{ rotate: 360 }}
                 transition={{ duration: 0.5 }}
               >
-                <img src="/images/5291.png_860.png" alt="PC" />
+                <img src="/images/d7abd52a-461d-4a26-aa38-12cb53f0ff31.png" alt="PC" className="w-14 h-14 object-contain" />
               </motion.div>
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-gray-900">
                 Phòng chống Ma túy
               </span>
             </Link>

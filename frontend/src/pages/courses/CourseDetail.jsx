@@ -112,20 +112,9 @@ const CourseDetail = () => {
       console.log("🔍 Enrollment response:", response.data);
       
       if (response.data.success) {
-        // Cập nhật enrollment state với data từ response
-        const enrollmentData = response.data.data;
-        console.log("🔍 Setting enrollment:", enrollmentData);
-        setEnrollment(enrollmentData);
-        
-        // Đảm bảo enrolling state được set đúng
-        if (enrollmentData && enrollmentData.status === "enrolled") {
-          setEnrolling(true);
-        }
-        
-        // Force re-render để cập nhật UI ngay lập tức
-        setForceUpdate(prev => prev + 1);
-        
         toast.success("Đăng ký khóa học thành công!");
+        // Gọi lại fetchEnrollment để lấy trạng thái mới nhất từ server
+        await fetchEnrollment();
       }
     } catch (error) {
       console.error("Error enrolling in course:", error);
@@ -553,18 +542,21 @@ const CourseDetail = () => {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={handleEnroll}
-                  disabled={enrolling}
-                  className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {enrolling ? (
-                    <div className="spinner w-4 h-4 mr-2" />
-                  ) : (
-                    <AcademicCapIcon className="w-4 h-4 mr-2" />
-                  )}
-                  {enrolling ? "Đang đăng ký..." : "Đăng ký ngay"}
-                </button>
+                // Ẩn nút đăng ký nếu user.role khác 'customer' và khác 'guest'
+                ((user?.role === 'member' || user?.role === 'guest') && (
+                  <button
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {enrolling ? (
+                      <div className="spinner w-4 h-4 mr-2" />
+                    ) : (
+                      <AcademicCapIcon className="w-4 h-4 mr-2" />
+                    )}
+                    {enrolling ? "Đang đăng ký..." : "Đăng ký ngay"}
+                  </button>
+                ))
               )}
 
               <div className="mt-6 text-center text-sm text-gray-600">

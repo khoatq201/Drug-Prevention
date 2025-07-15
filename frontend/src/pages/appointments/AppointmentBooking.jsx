@@ -150,8 +150,28 @@ const AppointmentBooking = () => {
     visible: { opacity: 1, y: 0 }
   };
 
+  // Nếu không phải user hoặc guest thì không cho đặt lịch
+  const isBookingAllowed = user?.role === 'guest' || user?.role === 'member';
+
+  // Debug log
+  console.log('DEBUG user:', user);
+  console.log('DEBUG user.role:', user?.role);
+
   if (!isAuthenticated) {
     return null;
+  }
+
+  if (!isBookingAllowed) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center">
+          <XMarkIcon className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Bạn không có quyền đặt lịch hẹn</h2>
+          <p className="text-gray-600 mb-6">Chỉ người dùng hoặc khách mới có thể đặt lịch hẹn tư vấn.</p>
+          <button onClick={() => navigate("/appointments")} className="btn-primary">Quay lại</button>
+        </div>
+      </div>
+    );
   }
 
   return (

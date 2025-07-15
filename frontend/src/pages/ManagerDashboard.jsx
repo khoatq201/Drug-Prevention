@@ -69,18 +69,6 @@ const ManagerDashboard = () => {
             <CounselorStats />
           </div>
 
-          {/* Info section */}
-          <div className="mt-8">
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin về Manager Dashboard</h2>
-              <div className="space-y-3 text-gray-600">
-                <p>• Đây là trang dashboard dành riêng cho role Manager</p>
-                <p>• Sidebar không có mục "Tổng quan", "Quản lý người dùng" và "Cài đặt"</p>
-                <p>• Màu sắc chủ đạo: Xanh dương (blue-600)</p>
-                <p>• Các chức năng quản lý: Khóa học, Đánh giá, Chuyên viên, Cuộc hẹn, Bài viết</p>
-              </div>
-            </div>
-          </div>
         </main>
       </div>
     </div>

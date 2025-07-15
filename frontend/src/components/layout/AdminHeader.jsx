@@ -85,48 +85,6 @@ const AdminHeader = ({ onMenuToggle }) => {
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
 
-          {/* User menu */}
-          <div className="relative">
-            <button
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
-            >
-              <UserCircleIcon className="w-8 h-8 text-gray-600" />
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-gray-700">
-                  {user?.firstName} {user?.lastName}
-                </p>
-                <p className="text-xs text-gray-500">Admin</p>
-              </div>
-              <ChevronDownIcon className="w-4 h-4 text-gray-600" />
-            </button>
-
-            {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  Thông tin cá nhân
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => setIsUserMenuOpen(false)}
-                >
-                  Về trang chủ
-                </Link>
-                <hr className="my-1" />
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Đăng xuất
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </header>
