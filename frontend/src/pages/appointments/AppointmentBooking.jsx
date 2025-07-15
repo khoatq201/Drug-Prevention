@@ -32,8 +32,16 @@ const AppointmentBooking = () => {
       navigate("/login", { state: { from: { pathname: "/appointments/book" } } });
       return;
     }
+    
+    // PHASE 1: Prevent consultants from accessing appointment booking
+    if (user && user.role === 'consultant') {
+      toast.error("Chuyên viên tư vấn không thể đặt lịch hẹn");
+      navigate("/dashboard");
+      return;
+    }
+    
     fetchCounselors();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user]);
 
   const fetchCounselors = async () => {
     try {
@@ -73,7 +81,7 @@ const AppointmentBooking = () => {
 
   const handleTimeSelect = (time) => {
     setSelectedTime(time);
-    setBookingStep(3);
+    // Don't automatically go to step 3, let user fill in other information
   };
 
   const handleBooking = async () => {
@@ -425,6 +433,30 @@ const AppointmentBooking = () => {
                     required
                   />
                 </div>
+
+                {/* Continue Button */}
+                {selectedTime && (
+                  <div className="flex justify-between pt-6">
+                    <button
+                      onClick={() => setBookingStep(1)}
+                      className="btn-outline"
+                    >
+                      Quay lại
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!notes.trim()) {
+                          toast.error("Vui lòng nhập lý do tư vấn");
+                          return;
+                        }
+                        setBookingStep(3);
+                      }}
+                      className="btn-primary"
+                    >
+                      Tiếp tục xác nhận
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

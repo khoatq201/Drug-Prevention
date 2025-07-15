@@ -464,12 +464,6 @@ router.post("/forgot-password", async (req, res) => {
 
     // Tạo OTP mới
     const otpCode = generateOTP();
-    console.log("📧 Generated OTP for password reset:", {
-      email,
-      otpCode,
-      otpType: typeof otpCode,
-      otpLength: otpCode.length,
-    });
 
     const otp = new OTP({
       email,
@@ -478,12 +472,6 @@ router.post("/forgot-password", async (req, res) => {
     });
 
     await otp.save();
-    console.log("💾 OTP saved to database:", {
-      _id: otp._id,
-      email: otp.email,
-      otp: otp.otp,
-      type: otp.type,
-    });
 
     // Gửi email
     await sendPasswordResetOTP(email, user.firstName, otpCode);

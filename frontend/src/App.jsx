@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute, GuestRoute } from "./components/ProtectedRoute";
-import { ManagerRoute, ConsultantRoute } from "./components/RoleProtectedRoute";
+import { ManagerRoute, ConsultantRoute, NonConsultantRoute } from "./components/RoleProtectedRoute";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import Home from "./pages/Home";
@@ -139,17 +139,17 @@ function App() {
               <Route
                 path="/appointments"
                 element={
-                  <ProtectedRoute>
+                  <NonConsultantRoute>
                     <Appointments />
-                  </ProtectedRoute>
+                  </NonConsultantRoute>
                 }
               />
               <Route
                 path="/appointments/book"
                 element={
-                  <ProtectedRoute>
+                  <NonConsultantRoute>
                     <AppointmentBooking />
-                  </ProtectedRoute>
+                  </NonConsultantRoute>
                 }
               />
               <Route
@@ -412,17 +412,6 @@ function App() {
                     <AdminModulesLessons />
                   </ProtectedRoute>
                 }
-              />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route
-                path="/appointments/book"
-                element={<AppointmentBooking />}
-              />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route
-                path="/courses/:id/lessons/:lessonId"
-                element={<Lesson />}
               />
               {/* 404 Page */}
               <Route path="*" element={<NotFound />} />

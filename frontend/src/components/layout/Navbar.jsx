@@ -38,10 +38,12 @@ const Navbar = () => {
     if (!isAuthenticated) return baseItems;
 
     // Add items for authenticated users
-    const authenticatedItems = [
-      ...baseItems,
-      { name: "Đặt lịch hẹn", href: "/appointments" },
-    ];
+    const authenticatedItems = [...baseItems];
+    
+    // PHASE 1: Only non-consultant users can access appointment booking
+    if (user && user.role !== 'consultant') {
+      authenticatedItems.push({ name: "Đặt lịch hẹn", href: "/appointments" });
+    }
 
     // Add admin items for admin only
     if (user && user.role === 'admin') {

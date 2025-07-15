@@ -110,7 +110,7 @@ const Dashboard = () => {
 
   const fetchEnrolledCourses = async () => {
     try {
-      debugger
+      // debugger
       const response = await api.get(`/courses/user/${user?._id}/enrolled`);
       console.log('Enrolled courses response:', response.data);
       if (response.data.success) {
@@ -458,10 +458,12 @@ const Dashboard = () => {
                   Tham gia khóa học
                 </Link>
                 
-                <Link to="/appointments/book" className="quick-action-btn flex items-center">
-                  <CalendarDaysIcon className="w-5 h-5 mr-3" />
-                  Đặt lịch tư vấn
-                </Link>
+                {user && user.role !== 'consultant' && (
+                  <Link to="/appointments/book" className="quick-action-btn flex items-center">
+                    <CalendarDaysIcon className="w-5 h-5 mr-3" />
+                    Đặt lịch tư vấn
+                  </Link>
+                )}
                 
                 <Link to="/programs" className="quick-action-btn flex items-center">
                   <UserGroupIcon className="w-5 h-5 mr-3" />

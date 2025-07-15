@@ -73,7 +73,7 @@ const AdminAppointments = () => {
   useEffect(() => {
     fetchAppointments();
     fetchCounselors();
-    fetchStats();
+    fetchAllAppointmentsForStats();
   }, [searchTerm, filters, pagination.current]);
 
   const fetchAppointments = async (page = 1) => {
@@ -112,14 +112,27 @@ const AdminAppointments = () => {
     }
   };
 
-  const fetchStats = async () => {
+  const fetchAllAppointmentsForStats = async () => {
     try {
-      const response = await api.get('/appointments/stats');
+      // Fetch all appointments without pagination for statistics
+      const response = await api.get('/appointments?limit=1000');
       if (response.data.success) {
-        setStats(response.data.data);
+        const allAppointments = response.data.data;
+        
+        // Calculate stats from appointments data
+        const stats = {
+          total: allAppointments.length,
+          pending: allAppointments.filter(apt => apt.status === 'pending').length,
+          confirmed: allAppointments.filter(apt => apt.status === 'confirmed').length,
+          completed: allAppointments.filter(apt => apt.status === 'completed').length,
+          cancelled: allAppointments.filter(apt => apt.status === 'cancelled').length,
+        };
+        
+        setStats(stats);
       }
     } catch (error) {
-      console.error('Error fetching appointment stats:', error);
+      console.error('Error fetching appointments for stats:', error);
+      toast.error('Không thể tải thống kê cuộc hẹn');
     }
   };
 
@@ -128,7 +141,7 @@ const AdminAppointments = () => {
       await api.put(`/appointments/${appointmentId}`, { status: newStatus });
       toast.success('Cập nhật trạng thái thành công');
       fetchAppointments(pagination.current);
-      fetchStats();
+      fetchAllAppointmentsForStats();
     } catch (error) {
       console.error('Error updating appointment status:', error);
       toast.error('Không thể cập nhật trạng thái');
@@ -144,7 +157,7 @@ const AdminAppointments = () => {
       await api.delete(`/appointments/${appointmentId}`);
       toast.success('Xóa cuộc hẹn thành công');
       fetchAppointments(pagination.current);
-      fetchStats();
+      fetchAllAppointmentsForStats();
     } catch (error) {
       console.error('Error deleting appointment:', error);
       toast.error('Không thể xóa cuộc hẹn');
