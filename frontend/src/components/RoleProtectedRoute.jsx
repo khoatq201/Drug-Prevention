@@ -58,4 +58,34 @@ const AdminManagerRoute = ({ children }) => {
   return <RoleProtectedRoute allowedRoles={["admin", "manager"]}>{children}</RoleProtectedRoute>;
 };
 
-export { RoleProtectedRoute, AdminRoute, ManagerRoute, ConsultantRoute, AdminManagerRoute }; 
+// Component để bảo vệ routes cho tất cả roles NGOẠI TRỪ consultant (PHASE 1: Appointment booking restrictions)
+const NonConsultantRoute = ({ children }) => {
+  const { isAuthenticated, loading, user } = useAuth();
+  const location = useLocation();
+
+  // Đợi cho đến khi AuthContext hoàn thành việc load
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang kiểm tra đăng nhập...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Chỉ redirect khi đã load xong và không authenticated
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // PHASE 1: Block consultants from accessing appointment booking
+  if (user.role === "consultant") {
+    return <Navigate to="/consultant" replace />;
+  }
+
+  return children;
+};
+
+export { RoleProtectedRoute, AdminRoute, ManagerRoute, ConsultantRoute, AdminManagerRoute, NonConsultantRoute }; 

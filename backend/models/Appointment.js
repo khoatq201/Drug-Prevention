@@ -246,12 +246,25 @@ appointmentSchema.statics.findAvailableSlots = async function (
   date,
   duration = 60
 ) {
+  const Counselor = require('./Counselor');
+  
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
   
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
   
+  // Find the counselor to get their availability
+  const counselor = await Counselor.findOne({ userId: counselorId });
+  if (!counselor) {
+    return [];
+  }
+  
+  // Get counselor's available slots for the date
+  const requestedDate = new Date(date);
+  const availableSlots = counselor.getAvailableSlots(requestedDate, duration);
+  
+  // Get existing appointments for the date
   const existingAppointments = await this.find({
     counselorId,
     appointmentDate: {
@@ -259,21 +272,15 @@ appointmentSchema.statics.findAvailableSlots = async function (
       $lte: endOfDay,
     },
     status: { $in: ["pending", "confirmed"] },
-  }).sort({ "appointmentTime.start": 1 });
+  }).select("appointmentTime");
   
-  // This is a simplified version - in a real app, you'd integrate with
-  // counselor availability schedules
-  const workingHours = {
-    start: "09:00",
-    end: "17:00",
-    breakStart: "12:00",
-    breakEnd: "13:00",
-  };
+  // Filter out booked slots
+  const bookedTimes = existingAppointments.map(apt => apt.appointmentTime.start);
+  const freeSlots = availableSlots.filter(slot => 
+    !bookedTimes.includes(slot.start)
+  );
   
-  const availableSlots = [];
-  // Implementation for finding available slots would go here
-  
-  return availableSlots;
+  return freeSlots;
 };
 
 // Static method to find appointments by date range

@@ -181,7 +181,7 @@ const Assessments = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {getAvailableAssessments().map((assessment, index) => {
             const userResult = getUserAssessmentResult(assessment._id);
-            const assessmentMeta = assessmentTypes.find(t => t.id === assessment.type.toLowerCase()) || {};
+            const assessmentMeta = assessmentTypes.find(t => t.id === assessment.type?.toLowerCase()) || {};
             const IconComponent = assessmentMeta.icon || ClipboardDocumentCheckIcon;
 
             return (

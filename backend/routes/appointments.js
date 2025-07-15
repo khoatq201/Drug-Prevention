@@ -101,7 +101,13 @@ router.get("/:id", auth, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id)
       .populate("userId", "firstName lastName email phone ageGroup")
-      .populate("counselorId", "firstName lastName email specialization")
+      .populate({
+        path: "counselorId",
+        populate: {
+          path: "userId",
+          select: "firstName lastName email"
+        }
+      })
       .populate("relatedAssessment", "score riskLevel completedAt");
     
     if (!appointment) {
@@ -114,7 +120,7 @@ router.get("/:id", auth, async (req, res) => {
     // Check access permissions
     const canAccess = 
       req.user._id.toString() === appointment.userId.toString() ||
-      req.user._id.toString() === appointment.counselorId.toString() ||
+      req.user._id.toString() === appointment.counselorId.userId.toString() ||
       req.user.hasPermission("staff");
     
     if (!canAccess) {
@@ -161,12 +167,30 @@ router.post("/", auth, async (req, res) => {
       });
     }
     
+    // PHASE 1 VALIDATION: Role-based booking restrictions
+    // Rule 1: Consultants cannot book appointments (they provide services, not consume them)
+    if (req.user.role === "consultant") {
+      return res.status(403).json({
+        success: false,
+        message: "Chuyên viên tư vấn không thể đặt lịch hẹn. Nếu bạn cần tư vấn từ đồng nghiệp, vui lòng liên hệ quản lý.",
+      });
+    }
+    
     // Verify counselor exists and has consultant role
-    const counselor = await User.findById(counselorId);
-    if (!counselor || !counselor.hasPermission("consultant")) {
+    const Counselor = require("../models/Counselor");
+    const counselorDoc = await Counselor.findById(counselorId).populate('userId');
+    if (!counselorDoc || !counselorDoc.userId || !counselorDoc.userId.hasPermission("consultant")) {
       return res.status(400).json({
         success: false,
         message: "Counselor không tồn tại hoặc không có quyền tư vấn",
+      });
+    }
+    
+    // Rule 2: Prevent self-booking (anyone booking appointment with themselves)
+    if (req.user._id.toString() === counselorDoc.userId._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: "Không thể đặt lịch hẹn với chính mình",
       });
     }
     
@@ -210,7 +234,13 @@ router.post("/", auth, async (req, res) => {
     await updateCounselorStats(counselorId);
     
     // Populate and return
-    await appointment.populate("counselorId", "firstName lastName email specialization");
+    await appointment.populate({
+      path: "counselorId",
+      populate: {
+        path: "userId",
+        select: "firstName lastName email"
+      }
+    });
     
     res.status(201).json({
       success: true,
@@ -230,7 +260,10 @@ router.post("/", auth, async (req, res) => {
 // Update appointment
 router.put("/:id", auth, async (req, res) => {
   try {
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id).populate({
+      path: "counselorId",
+      select: "userId"
+    });
     
     if (!appointment) {
       return res.status(404).json({
@@ -242,7 +275,7 @@ router.put("/:id", auth, async (req, res) => {
     // Check permissions
     const canUpdate = 
       req.user._id.toString() === appointment.userId.toString() ||
-      req.user._id.toString() === appointment.counselorId.toString() ||
+      req.user._id.toString() === appointment.counselorId.userId.toString() ||
       req.user.hasPermission("staff");
     
     if (!canUpdate) {
@@ -269,7 +302,13 @@ router.put("/:id", auth, async (req, res) => {
       { ...req.body, modifiedBy: req.user._id },
       { new: true, runValidators: true }
     ).populate("userId", "firstName lastName email phone")
-     .populate("counselorId", "firstName lastName email specialization");
+     .populate({
+       path: "counselorId",
+       populate: {
+         path: "userId",
+         select: "firstName lastName email"
+       }
+     });
     
     // If status changed, update counselor stats
     if (req.body.status && req.body.status !== oldStatus) {
@@ -296,7 +335,10 @@ router.delete("/:id", auth, async (req, res) => {
   try {
     const { reason } = req.body;
     
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id).populate({
+      path: "counselorId",
+      select: "userId"
+    });
     
     if (!appointment) {
       return res.status(404).json({
@@ -308,7 +350,7 @@ router.delete("/:id", auth, async (req, res) => {
     // Check permissions
     const canCancel = 
       req.user._id.toString() === appointment.userId.toString() ||
-      req.user._id.toString() === appointment.counselorId.toString() ||
+      req.user._id.toString() === appointment.counselorId.userId.toString() ||
       req.user.hasPermission("staff");
     
     if (!canCancel) {
@@ -499,7 +541,10 @@ router.post("/:id/feedback", auth, async (req, res) => {
   try {
     const { rating, comment } = req.body;
     
-    const appointment = await Appointment.findById(req.params.id);
+    const appointment = await Appointment.findById(req.params.id).populate({
+      path: "counselorId",
+      select: "userId"
+    });
     
     if (!appointment) {
       return res.status(404).json({
@@ -511,7 +556,7 @@ router.post("/:id/feedback", auth, async (req, res) => {
     // Check if user participated in this appointment
     const canProvideFeedback = 
       req.user._id.toString() === appointment.userId.toString() ||
-      req.user._id.toString() === appointment.counselorId.toString();
+      req.user._id.toString() === appointment.counselorId.userId.toString();
     
     if (!canProvideFeedback) {
       return res.status(403).json({
